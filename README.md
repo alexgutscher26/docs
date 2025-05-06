@@ -1,4 +1,6 @@
-# Mintlify Starter Kit
+# MonitorFlow Documentation
+
+This is the documentation for MonitorFlow. MonitorFlow is a tool that allows you to monitor your website's performance and send you notifications when there are issues.
 
 Click on `Use this template` to copy the Mintlify starter kit. The starter kit contains examples including
 
