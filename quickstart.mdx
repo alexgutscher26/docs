@@ -1,6 +1,6 @@
 ---
-title: 'MonitorFlow Quickstart'
-description: 'Get started with MonitorFlow monitoring in under 5 minutes'
+title: "MonitorFlow Quickstart"
+description: "Get started with MonitorFlow monitoring in under 5 minutes"
 ---
 
 ## Setup your MonitorFlow environment
@@ -10,27 +10,31 @@ Learn how to set up MonitorFlow locally and deploy it to monitor your services.
 ### Installation and setup
 
 <AccordionGroup>
-  <Accordion icon="github" title="Clone the MonitorFlow repository">
+  <Accordion title="Clone the MonitorFlow repository" icon="github">
     To get started with MonitorFlow, clone the repository to your local machine using the following command:
+
     ```bash
     git clone https://github.com/yourusername/monitorflow.git
     cd monitorflow
     ```
-    
+
     After cloning, install the dependencies using pnpm:
+
     ```bash
     pnpm install
     ```
   </Accordion>
-  <Accordion icon="rectangle-terminal" title="Configure your environment">
+  <Accordion title="Configure your environment" icon="rectangle-terminal">
     MonitorFlow requires some basic configuration before you can start monitoring your services.
-    
+
     1. Copy the example environment file:
+
     ```bash
     cp .env.example .env
     ```
-    
+
     2. Edit the `.env` file with your specific settings:
+
     ```
     # Database configuration
     DATABASE_URL="your-database-connection-string"
@@ -43,19 +47,20 @@ Learn how to set up MonitorFlow locally and deploy it to monitor your services.
     ALERT_THRESHOLD=90
     NOTIFICATION_EMAIL="alerts@yourdomain.com"
     ```
-    
+
     3. Set up your database using Prisma:
+
     ```bash
     pnpm prisma db push
     ```
   </Accordion>
-  <Accordion icon="play" title="Run MonitorFlow locally">
+  <Accordion title="Run MonitorFlow locally" icon="play">
     Start the development server to run MonitorFlow locally:
-    
+
     ```bash
     pnpm dev
     ```
-    
+
     This will start the Next.js development server. You can access the MonitorFlow dashboard at `http://localhost:3000`.
   </Accordion>
 </AccordionGroup>
@@ -63,45 +68,21 @@ Learn how to set up MonitorFlow locally and deploy it to monitor your services.
 ### Deploy MonitorFlow
 
 <AccordionGroup>
+  <Accordion title="Prepare for deployment" icon="cloud">
+    Before deploying MonitorFlow to production, build the application:
 
-<Accordion icon="cloud" title="Prepare for deployment">
-  Before deploying MonitorFlow to production, build the application:
-  
-  ```bash
-  pnpm build
+    ```bash
+    pnpm build
+    ```
 
-  This creates an optimized production build in the .next directory.
+    This creates an optimized production build in the .next directory.
 
-  MonitorFlow can be deployed to various platforms. To deploy using Wrangler:
+    MonitorFlow can be deployed to various platforms. To deploy using Wrangler:
 
     ```bash
     pnpm deploy
+    ```
 
-    For other deployment options, refer to the deployment documentation .
-
-    ## Using MonitorFlow
-Learn how to use MonitorFlow to monitor your services and set up alerts.
-
-Configure endpoints to monitor and set check intervals.
-
-<Card
-title="Set Up Alerts"
-icon="bell"
-href="/guides/alerts"
-
-Configure notification channels and alert thresholds.
-
-<Card
-title="View Dashboards"
-icon="chart-line"
-href="/guides/dashboards"
-
-Understand the monitoring dashboards and metrics.
-
-<Card
-title="Integrate with CI/CD"
-icon="code-branch"
-href="/guides/integrations"
-
-Integrate MonitorFlow with your CI/CD pipeline.
- ```
+    For other deployment options, refer to the deployment documentation.
+  </Accordion>
+</AccordionGroup>
