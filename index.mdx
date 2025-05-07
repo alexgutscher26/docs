@@ -1,71 +1,82 @@
 ---
-title: Introduction
-description: "Welcome to the home of your new documentation"
+title: "Welcome to MonitorFlow"
+description: "Real-time service monitoring and alerting platform for modern applications"
 ---
 
-<img
-  className="block dark:hidden"
-  src="/images/hero-light.png"
-  alt="Hero Light"
-/>
-<img
-  className="hidden dark:block"
-  src="/images/hero-dark.png"
-  alt="Hero Dark"
-/>
+## What is MonitorFlow?
 
-## Setting up
+MonitorFlow is a powerful, real-time monitoring solution designed to help you track, analyze, and respond to your service's performance metrics. With our intuitive dashboard and comprehensive alerting system, you can ensure your applications are running smoothly 24/7.
 
-The first step to world-class documentation is setting up your editing environments.
+## Key Features
 
 <CardGroup cols={2}>
-  <Card
-    title="Edit Your Docs"
-    icon="pen-to-square"
-    href="https://mintlify.com/docs/quickstart"
-  >
-    Get your docs set up locally for easy development
+  <Card title="Real-Time Monitoring" icon="gauge-high">
+    Track your service's performance metrics in real-time with customizable dashboards and instant updates.
   </Card>
-  <Card
-    title="Preview Changes"
-    icon="image"
-    href="https://mintlify.com/docs/development"
-  >
-    Preview your changes before you push to make sure they're perfect
+  <Card title="Smart Alerting" icon="bell">
+    Set up intelligent alerts with customizable thresholds and receive notifications through your preferred channels.
+  </Card>
+  <Card title="Performance Analytics" icon="chart-line">
+    Gain deep insights into your service's performance with detailed analytics and trend analysis.
+  </Card>
+  <Card title="Easy Integration" icon="puzzle-piece">
+    Seamlessly integrate with your existing infrastructure using our robust API and SDKs.
   </Card>
 </CardGroup>
 
-## Make it yours
+## Getting Started
 
-Update your docs to your brand and add valuable content for the best user conversion.
+Get up and running with MonitorFlow in minutes:
+
+<Steps>
+  <Step title="Installation">
+    Clone our repository and install dependencies:
+    ```bash
+    git clone https://github.com/yourusername/monitorflow.git
+    cd monitorflow
+    pnpm install
+    ```
+  </Step>
+  <Step title="Configuration">
+    Set up your environment variables and configure your monitoring preferences.
+    ```bash
+    cp .env.example .env
+    # Edit .env with your settings
+    ```
+  </Step>
+  <Step title="Launch">
+    Start monitoring your services:
+    ```bash
+    pnpm dev
+    ```
+    Access your dashboard at `http://localhost:3000`
+  </Step>
+</Steps>
+
+## Why Choose MonitorFlow?
 
 <CardGroup cols={2}>
-  <Card
-    title="Customize Style"
-    icon="palette"
-    href="https://mintlify.com/docs/settings/global"
-  >
-    Customize your docs to your company's colors and brands
+  <Card title="Easy to Use" icon="hand-pointer">
+    Get started quickly with our intuitive interface and comprehensive documentation.
   </Card>
-  <Card
-    title="Reference APIs"
-    icon="code"
-    href="https://mintlify.com/docs/api-playground/openapi"
-  >
-    Automatically generate endpoints from an OpenAPI spec
+  <Card title="Scalable" icon="arrows-up-down-left-right">
+    Monitor services of any size, from small applications to large-scale distributed systems.
   </Card>
-  <Card
-    title="Add Components"
-    icon="screwdriver-wrench"
-    href="https://mintlify.com/docs/content/components/accordions"
-  >
-    Build interactive features and designs to guide your users
+  <Card title="Reliable" icon="shield-check">
+    Built with reliability in mind, ensuring you never miss critical alerts.
   </Card>
-  <Card
-    title="Get Inspiration"
-    icon="stars"
-    href="https://mintlify.com/customers"
-  >
-    Check out our showcase of our favorite documentation
+  <Card title="Cost-Effective" icon="money-bill-trend-up">
+    Pay only for what you use with our flexible pricing plans.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start Guide" icon="bolt" href="/quickstart">
+    Follow our quick start guide to set up MonitorFlow in your environment.
+  </Card>
+  <Card title="API Documentation" icon="code" href="/api-reference">
+    Explore our API documentation to integrate MonitorFlow with your services.
   </Card>
 </CardGroup>
