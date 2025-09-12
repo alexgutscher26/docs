@@ -1,0 +1,448 @@
+---
+title: "Development Guide"
+description: "Comprehensive guide for developing with StackForge"
+---
+
+# Development Guide
+
+This guide provides detailed information about developing with StackForge, covering the project structure, development workflow, and best practices.
+
+## Project Structure
+
+StackForge follows a well-organized structure to maintain consistency and scalability:
+
+```
+src/
+├── app/                 # Next.js app router pages
+│   ├── (main)/          # Main application pages
+│   ├── (marketing)/     # Marketing pages
+│   ├── api/             # API routes
+│   ├── auth/            # Authentication pages
+│   └── layout.tsx       # Root layout
+├── components/          # React components
+│   ├── auth/            # Authentication components
+│   ├── dashboard/       # Dashboard components
+│   ├── global/          # Global components
+│   ├── marketing/       # Marketing components
+│   └── ui/              # UI components
+├── constants/           # Application constants
+├── db/                  # Database configuration and schema
+│   ├── schema/          # Drizzle schema definitions
+│   └── index.ts         # Database client configuration
+├── functions/           # Utility functions
+├── hooks/              # Custom React hooks
+├── lib/                 # Library configurations
+├── schema/              # Validation schemas
+└── styles/              # Global styles
+```
+
+## Development Workflow
+
+### Setting Up Your Environment
+
+1. Ensure you have the required prerequisites installed:
+   - Node.js version 18 or higher
+   - Bun package manager
+   - PostgreSQL database instance (local or cloud)
+   - Clerk account for authentication
+
+2. Install dependencies:
+   ```bash
+   bun install
+   ```
+
+3. Set up environment variables in `.env.local`:
+   ```env
+   # App Configuration
+   NEXT_PUBLIC_APP_NAME=StackForge
+   NEXT_PUBLIC_APP_DOMAIN=http://localhost:3000
+
+   # Database
+   DATABASE_URL=postgresql://user:password@localhost:5432/stackforge
+
+   # Clerk Authentication
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_XXXXXXXXXXXXXXXXXXXXXXXX
+   CLERK_SECRET_KEY=sk_test_XXXXXXXXXXXXXXXXXXXXXXXX
+   NEXT_PUBLIC_CLERK_SIGN_IN_URL=/auth/signin
+   NEXT_PUBLIC_CLERK_SIGN_UP_URL=/auth/signup
+   NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_URL=/
+   NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_URL=/
+   ```
+
+### Database Management
+
+StackForge uses Drizzle ORM with PostgreSQL. Here are the available database commands:
+
+- **Push schema changes** (development only):
+  ```bash
+  bun run db:push
+  ```
+
+- **Generate migrations**:
+  ```bash
+  bun run db:generate
+  ```
+
+- **Apply migrations**:
+  ```bash
+  bun run db:migrate
+  ```
+
+- **Open Drizzle Studio** for database management:
+  ```bash
+  bun run db:studio
+  ```
+
+- **Seed the database** with sample data:
+  ```bash
+  bun run db:seed
+  ```
+
+### Running the Development Server
+
+Start the development server with:
+```bash
+bun run dev
+```
+
+The application will be available at [http://localhost:3000](http://localhost:3000). The development server automatically reloads when you make changes to the code.
+
+## Component Development
+
+### Component Structure
+
+StackForge follows Atomic Design Principles and uses the Container-Component Pattern:
+
+1. **Container Components**: Handle data fetching, state management, and business logic
+2. **UI Components**: Focus purely on presentation and user interaction
+
+### Creating New Components
+
+When creating new components, follow these guidelines:
+
+1. Place components in the appropriate directory under `src/components/`
+2. Use TypeScript for type safety
+3. Implement proper accessibility attributes
+4. Follow the existing styling patterns with Tailwind CSS
+5. Export components in the corresponding `index.ts` file
+
+Example component structure:
+```tsx
+// src/components/ui/button.tsx
+import { cva, type VariantProps } from "class-variance-authority"
+import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
+import { cn } from "@/functions"
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline: "border border-input hover:bg-accent hover:text-accent-foreground",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "underline-offset-4 hover:underline text-primary",
+      },
+      size: {
+        default: "h-10 py-2 px-4",
+        sm: "h-9 px-3 rounded-md",
+        lg: "h-11 px-8 rounded-md",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button"
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Button.displayName = "Button"
+
+export { Button, buttonVariants }
+```
+
+## API Development
+
+### Creating API Routes
+
+API routes are located in `src/app/api/`. Follow these patterns:
+
+1. Use appropriate HTTP methods (GET, POST, PUT, DELETE)
+2. Implement proper error handling
+3. Validate input data with Zod schemas
+4. Use server-side database operations through Drizzle ORM
+
+Example API route:
+```ts
+// src/app/api/posts/route.ts
+import { db } from "@/db"
+import { posts } from "@/db/schema"
+import { createPostSchema } from "@/schema"
+import { eq } from "drizzle-orm"
+import { NextResponse } from "next/server"
+import { z } from "zod"
+
+export async function GET() {
+  try {
+    const result = await db.select().from(posts)
+    return NextResponse.json(result)
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to fetch posts" },
+      { status: 500 }
+    )
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json()
+    const parsed = createPostSchema.parse(body)
+    
+    const result = await db.insert(posts).values(parsed).returning()
+    return NextResponse.json(result[0])
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Invalid request data", details: error.errors },
+        { status: 400 }
+      )
+    }
+    
+    return NextResponse.json(
+      { error: "Failed to create post" },
+      { status: 500 }
+    )
+  }
+}
+```
+
+## Database Schema Management
+
+### Adding New Models
+
+1. Define new models in `src/db/schema/`
+2. Export them in `src/db/schema/index.ts`
+3. Generate migrations with `bun run db:generate`
+4. Apply migrations with `bun run db:migrate`
+
+Example schema definition:
+```ts
+// src/db/schema/post.ts
+import { relations } from "drizzle-orm"
+import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import { users } from "./user"
+
+export const posts = pgTable("posts", {
+  id: integer().primaryKey().generatedByDefaultAsIdentity(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+})
+
+export const postsRelations = relations(posts, ({ one }) => ({
+  user: one(users, {
+    fields: [posts.userId],
+    references: [users.id],
+  }),
+}))
+```
+
+## Styling and UI
+
+### Tailwind CSS Configuration
+
+Customize Tailwind in `tailwind.config.ts`. StackForge includes several plugins:
+
+- `tailwindcss-animate` for animations
+- `tailwind-scrollbar-hide` for scrollbar utilities
+- Custom color configurations
+
+### Dark Mode Support
+
+StackForge implements both dark and light mode using `next-themes`. Use the `useTheme` hook to access and modify theme settings:
+
+```tsx
+import { useTheme } from "next-themes"
+
+const ThemeToggle = () => {
+  const { theme, setTheme } = useTheme()
+  
+  return (
+    <button
+      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      className="p-2 rounded-md bg-gray-200 dark:bg-gray-700"
+    >
+      Toggle {theme === "dark" ? "Light" : "Dark"} Mode
+    </button>
+  )
+}
+```
+
+## Authentication
+
+StackForge uses Clerk for authentication. Key features include:
+
+- Sign-in and sign-up pages
+- Social authentication (Google, GitHub, etc.)
+- Protected route middleware
+- User session management
+
+### Protecting Routes
+
+Use middleware to protect routes:
+```ts
+// src/middleware.ts
+import { authMiddleware } from "@clerk/nextjs"
+
+export default authMiddleware({
+  publicRoutes: ["/", "/api/webhooks(.*)"],
+})
+
+export const config = {
+  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
+}
+```
+
+## Testing
+
+### Unit Testing
+
+Write unit tests for utility functions and components:
+```ts
+// Example test for a utility function
+import { describe, it, expect } from "bun:test"
+import { cn } from "@/functions"
+
+describe("cn", () => {
+  it("should merge class names correctly", () => {
+    const result = cn("class1", "class2")
+    expect(result).toBe("class1 class2")
+  })
+})
+```
+
+### Component Testing
+
+Use React Testing Library for component tests:
+```tsx
+import { render, screen } from "@testing-library/react"
+import { Button } from "@/components/ui/button"
+
+describe("Button", () => {
+  it("should render correctly", () => {
+    render(<Button>Click me</Button>)
+    expect(screen.getByText("Click me")).toBeInTheDocument()
+  })
+})
+```
+
+## Performance Optimization
+
+### Code Splitting
+
+Use dynamic imports for code splitting:
+```tsx
+import dynamic from "next/dynamic"
+
+const HeavyComponent = dynamic(() => import("@/components/heavy-component"), {
+  loading: () => <p>Loading...</p>,
+  ssr: false,
+})
+```
+
+### Image Optimization
+
+Use Next.js Image component for optimized images:
+```tsx
+import Image from "next/image"
+
+const OptimizedImage = () => (
+  <Image
+    src="/path/to/image.jpg"
+    alt="Description"
+    width={500}
+    height={300}
+  />
+)
+```
+
+## Deployment
+
+### Building for Production
+
+Create a production build with:
+```bash
+bun run build
+```
+
+### Environment Variables for Production
+
+Ensure all environment variables are set for production:
+```env
+# App Configuration
+NEXT_PUBLIC_APP_NAME=StackForge
+NEXT_PUBLIC_APP_DOMAIN=https://yourdomain.com
+
+# Database
+DATABASE_URL=postgresql://user:password@host:port/database
+
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_publishable_key
+CLERK_SECRET_KEY=your_secret_key
+```
+
+## Best Practices
+
+1. **Type Safety**: Use TypeScript for all components and functions
+2. **Component Reusability**: Create components that can be reused across the application
+3. **Performance**: Implement lazy loading and code splitting where appropriate
+4. **Accessibility**: Follow WCAG guidelines and use semantic HTML
+5. **Security**: Validate all inputs and use environment variables for secrets
+6. **Documentation**: Comment complex logic and update documentation when making changes
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Database Connection Errors**: Verify your `DATABASE_URL` in `.env.local`
+2. **Clerk Authentication Issues**: Check your Clerk keys and domain settings
+3. **Build Errors**: Ensure all dependencies are installed with `bun install`
+4. **TypeScript Errors**: Check for missing type definitions or incorrect imports
+
+### Getting Help
+
+If you encounter issues not covered in this guide:
+
+- Check the [StackForge GitHub repository](https://github.com/Shreyas-29/StackForge-ai) for issues and discussions
+- Refer to the official documentation for Next.js, TypeScript, and other technologies used
+- Reach out to the StackForge support team with your license information
