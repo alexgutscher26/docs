@@ -1,16 +1,8 @@
-# Mintlify Starter Kit
+# StackForge Documentation
 
-Use the starter kit to get your docs deployed and ready to customize.
+This directory contains the documentation for StackForge, an AI-powered social media marketing platform built with Next.js, TypeScript, and Tailwind CSS.
 
-Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
-
-- Guide pages
-- Navigation
-- Customizations
-- API reference pages
-- Use of popular components
-
-**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
+The documentation is built using [Mintlify](https://mintlify.com) and can be previewed locally using the Mintlify CLI.
 
 ## Development
 
@@ -32,13 +24,18 @@ View your local preview at `http://localhost:3000`.
 
 Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.
 
+## StackForge Documentation Structure
+
+The documentation is organized into the following sections:
+
+- **Getting Started**: Quickstart guide and development setup
+- **Customization**: How to customize the platform for your needs
+- **API Reference**: Documentation for the API endpoints
+- **Essentials**: Guides on writing content, using code samples, and other documentation features
+
 ## Need help?
 
-### Troubleshooting
-
-- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI.
-- If a page loads as a 404: Make sure you are running in a folder with a valid `docs.json`.
-
 ### Resources
+- [StackForge GitHub Repository](https://github.com/Shreyas-29/StackForge-ai)
 - [Mintlify documentation](https://mintlify.com/docs)
 - [Mintlify community](https://mintlify.com/community)

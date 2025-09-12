@@ -1,25 +1,26 @@
 ---
 title: 'Development'
-description: 'Preview changes locally to update your docs'
+description: 'Set up your local development environment for StackForge'
 ---
 
 <Info>
   **Prerequisites**:
-  - Node.js version 19 or higher
-  - A docs repository with a `docs.json` file
+  - Node.js version 18 or higher
+  - Bun package manager
+  - PostgreSQL database
+  - Clerk account for authentication
 </Info>
 
-Follow these steps to install and run Mintlify on your operating system.
+Follow these steps to set up your local development environment for StackForge.
 
 <Steps>
-<Step title="Install the Mintlify CLI">
+<Step title="Install Bun">
 
-```bash
-npm i -g mint
-```
+StackForge uses Bun as its package manager and runtime. Install Bun by following the [official installation guide](https://bun.sh/docs/installation).
+
 </Step>
 
-<Step title="Preview locally">
+<Step title="Preview documentation locally">
 
 Navigate to your docs directory where your `docs.json` file is located, and run the following command:
 
@@ -46,13 +47,19 @@ If you attempt to run Mintlify on a port that's already in use, it will use the 
 Port 3000 is already in use. Trying 3001 instead.
 ```
 
-## Mintlify versions
+## StackForge Development Workflow
 
-Please note that each CLI release is associated with a specific version of Mintlify. If your local preview does not align with the production version, please update the CLI:
+When developing for StackForge, you'll typically work with two separate processes:
 
-```bash
-npm mint update
-```
+1. **Next.js Development Server**: For the main application
+   ```bash
+   bun run dev
+   ```
+
+2. **Documentation Server**: For the documentation site
+   ```bash
+   mint dev
+   ```
 
 ## Validating links
 
@@ -81,13 +88,24 @@ We suggest using extensions on your IDE to recognize and format MDX. If you're a
 
     This may be due to an outdated version of node. Try the following:
     1. Remove the currently-installed version of the CLI: `npm remove -g mint`
-    2. Upgrade to Node v19 or higher.
+    2. Upgrade to Node v18 or higher.
     3. Reinstall the CLI: `npm i -g mint`
   </Accordion>
 
   <Accordion title="Issue: Encountering an unknown error">
   
     Solution: Go to the root of your device and delete the `~/.mintlify` folder. Then run `mint dev` again.
+  </Accordion>
+  
+  <Accordion title="Issue: Database connection errors">
+  
+    Ensure your PostgreSQL database is running and the DATABASE_URL in your `.env.local` file is correct. You may need to run:
+    
+    ```bash
+    bun run db:push
+    ```
+    
+    to initialize your database schema.
   </Accordion>
 </AccordionGroup>
 

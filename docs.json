@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "StackForge",
   "colors": {
     "primary": "#16A34A",
     "light": "#07C983",
@@ -95,8 +95,8 @@
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "label": "GitHub",
+        "href": "https://github.com/Shreyas-29/StackForge-ai"
       }
     ],
     "primary": {
@@ -120,7 +120,7 @@
   "footer": {
     "socials": {
       "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
+      "github": "https://github.com/Shreyas-29/StackForge-ai",
       "linkedin": "https://linkedin.com/company/mintlify"
     }
   }

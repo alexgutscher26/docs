@@ -1,76 +1,105 @@
 ---
-title: "Claude Code setup"
-description: "Configure Claude Code for your documentation workflow"
-icon: "asterisk"
+title: "Claude Code setup for StackForge"
+description: "Configure Claude Code for developing with the StackForge boilerplate"
+icon: "robot"
 ---
 
-Claude Code is Anthropic's official CLI tool. This guide will help you set up Claude Code to help you write and maintain your documentation.
+Use Claude Code to help develop and maintain your StackForge application. This guide shows how to configure Claude Code for better results when working with the StackForge codebase.
 
 ## Prerequisites
 
-- Active Claude subscription (Pro, Max, or API access)
-
-## Setup
-
-1. Install Claude Code globally:
-
-  ```bash
-  npm install -g @anthropic-ai/claude-code
-```
-
-2. Navigate to your docs directory.
-3. (Optional) Add the `CLAUDE.md` file below to your project.
-4. Run `claude` to start.
-
-## Create `CLAUDE.md`
-
-Create a `CLAUDE.md` file at the root of your documentation repository to train Claude Code on your specific documentation standards:
-
-````markdown
-# Mintlify documentation
-
-## Working relationship
-- You can push back on ideas-this can lead to better documentation. Cite sources and explain your reasoning when you do so
-- ALWAYS ask for clarification rather than making assumptions
-- NEVER lie, guess, or make up information
+- Claude Code extension installed in your IDE
+- StackForge repository cloned locally
+- Bun package manager installed
+- PostgreSQL database set up
 
 ## Project context
-- Format: MDX files with YAML frontmatter
-- Config: docs.json for navigation, theme, settings
-- Components: Mintlify components
 
-## Content strategy
-- Document just enough for user success - not too much, not too little
-- Prioritize accuracy and usability of information
-- Make content evergreen when possible
-- Search for existing information before adding new content. Avoid duplication unless it is done for a strategic reason
-- Check existing patterns for consistency
-- Start by making the smallest reasonable changes
+Provide Claude Code with context about the StackForge project:
 
-## Frontmatter requirements for pages
-- title: Clear, descriptive page title
-- description: Concise summary for SEO/navigation
+### Project overview
 
-## Writing standards
-- Second-person voice ("you")
-- Prerequisites at start of procedural content
-- Test all code examples before publishing
-- Match style and formatting of existing pages
-- Include both basic and advanced use cases
-- Language tags on all code blocks
-- Alt text on all images
-- Relative paths for internal links
+StackForge is an AI-powered social media marketing platform built with:
+- Next.js 14 with App Router
+- TypeScript with strict mode enabled
+- Tailwind CSS for styling
+- Drizzle ORM with PostgreSQL
+- Clerk for authentication
+- Bun as the package manager
 
-## Git workflow
-- NEVER use --no-verify when committing
-- Ask how to handle uncommitted changes before starting
-- Create a new branch when no clear branch exists for changes
-- Commit frequently throughout development
-- NEVER skip or disable pre-commit hooks
+### Key directories
 
-## Do not
-- Skip frontmatter on any MDX file
-- Use absolute URLs for internal links
-- Include untested code examples
-- Make assumptions - always ask for clarification
-````
+Help Claude Code understand the important directories:
+
+- `src/app/` - Next.js app router pages
+- `src/components/` - React components
+- `src/db/schema/` - Database schema definitions
+- `src/schema/` - Validation schemas
+- `src/hooks/` - Custom React hooks
+- `src/functions/` - Utility functions
+
+### Technology patterns
+
+Make Claude Code aware of key patterns in StackForge:
+
+1. **Authentication**: Uses Clerk with protected routes
+2. **Database**: Uses Drizzle ORM with PostgreSQL
+3. **Styling**: Uses Tailwind CSS with custom configurations
+4. **State Management**: Uses React Context API and hooks
+5. **Form Handling**: Uses React Hook Form with Zod validation
+6. **UI Libraries**: Uses Shadcn UI, Aceternity UI, Magic UI
+
+## Best practices for Claude Code interactions
+
+### When working with components
+
+- Follow the existing component structure and patterns
+- Use TypeScript interfaces for props
+- Implement proper error handling
+- Use Tailwind CSS for styling
+
+### When working with database code
+
+- Use Drizzle ORM query patterns
+- Implement proper error handling for database operations
+- Use server components for data fetching when possible
+- Follow validation patterns with Zod schemas
+
+### When working with API routes
+
+- Place routes in the `src/app/api/` directory
+- Use proper HTTP methods
+- Implement proper error handling and status codes
+- Validate all input data using Zod schemas
+
+## Common StackForge tasks
+
+### Creating a new page
+
+1. Create a new directory in `src/app/`
+2. Add a `page.tsx` file with the page content
+3. Add a `layout.tsx` file if needed
+4. Implement proper TypeScript typing
+5. Use Tailwind CSS for styling
+
+### Creating a new component
+
+1. Determine the appropriate directory in `src/components/`
+2. Create a new `.tsx` file with the component
+3. Use TypeScript interfaces for props
+4. Implement the component with proper error handling
+5. Use Tailwind CSS for styling
+
+### Extending the database schema
+
+1. Add new models to `src/db/schema/`
+2. Run `bun run db:push` to update the database
+3. Create new API routes to interact with the data
+4. Update TypeScript types as needed
+
+### Adding authentication protection
+
+1. Use Clerk's `auth()` function to check authentication
+2. Redirect unauthenticated users to the sign-in page
+3. Protect API routes with authentication middleware
+4. Use proper error handling for authentication failures

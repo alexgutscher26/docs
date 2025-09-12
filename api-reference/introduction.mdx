@@ -1,33 +1,66 @@
 ---
 title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+description: 'StackForge API Endpoints'
 ---
-
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
 
 ## Welcome
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+StackForge provides a RESTful API for interacting with social media posts and user data. The API is built using Next.js API routes and follows standard REST conventions.
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+## Base URL
+
+All API endpoints are relative to the base URL of your StackForge deployment:
+
+```
+https://your-stackforge-domain.com/api
+```
+
+For local development, this would be:
+
+```
+http://localhost:3000/api
+```
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+Most API endpoints require authentication through Clerk. Include the Clerk session token in the Authorization header:
+
+```
+Authorization: Bearer YOUR_CLERK_SESSION_TOKEN
+```
+
+## API Endpoints
+
+The current API includes endpoints for managing social media posts:
+
+- `GET /api/posts` - Retrieve all posts
+- `POST /api/posts` - Create a new post
+- `GET /api/posts/[id]` - Retrieve a specific post
+- `PUT /api/posts/[id]` - Update a specific post
+- `DELETE /api/posts/[id]` - Delete a specific post
+
+## Rate Limiting
+
+The API implements rate limiting to prevent abuse. Exceeding the rate limit will result in a 429 status code.
+
+## Error Handling
+
+API errors are returned in a consistent format:
 
 ```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+{
+  "error": "Error message",
+  "code": "ERROR_CODE"
+}
+```
+
+## Response Format
+
+Successful API responses follow this format:
+
+```json
+{
+  "success": true,
+  "data": { /* Response data */ }
+}
 ```

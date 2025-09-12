@@ -1,96 +1,115 @@
 ---
-title: "Windsurf setup"
-description: "Configure Windsurf for your documentation workflow"
-icon: "water"
+title: "Windsurf setup for StackForge"
+description: "Configure Windsurf for developing with the StackForge boilerplate"
+icon: "wind"
 ---
 
-Configure Windsurf's Cascade AI assistant to help you write and maintain documentation. This guide shows how to set up Windsurf specifically for your Mintlify documentation workflow.
+Use Windsurf to help develop and maintain your StackForge application. This guide shows how to configure Windsurf for better results when working with the StackForge codebase.
 
 ## Prerequisites
 
 - Windsurf editor installed
-- Access to your documentation repository
+- StackForge repository cloned locally
+- Bun package manager installed
+- PostgreSQL database set up
 
-## Workspace rules
+## Project understanding
 
-Create workspace rules that provide Windsurf with context about your documentation project and standards.
+Help Windsurf understand the StackForge project structure and technology stack:
 
-Create `.windsurf/rules.md` in your project root:
+### Technology stack
 
-````markdown
-# Mintlify technical writing rule
+StackForge uses:
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript (strict mode)
+- **Styling**: Tailwind CSS with custom configurations
+- **UI Libraries**: Shadcn UI, Aceternity UI, Magic UI
+- **State Management**: React Context API and hooks
+- **Form Handling**: React Hook Form with Zod validation
+- **Authentication**: Clerk
+- **Database**: PostgreSQL via Drizzle ORM
+- **Package Manager**: Bun
 
-## Project context
+### Directory structure
 
-- This is a documentation project on the Mintlify platform
-- We use MDX files with YAML frontmatter  
-- Navigation is configured in `docs.json`
-- We follow technical writing best practices
+Key directories in StackForge:
+- `src/app/` - Next.js app router pages
+- `src/components/` - React components
+- `src/db/` - Database configuration and schema
+- `src/schema/` - Validation schemas
+- `src/hooks/` - Custom React hooks
+- `src/functions/` - Utility functions
+- `src/constants/` - Application constants
 
-## Writing standards
+### Development commands
 
-- Use second person ("you") for instructions
-- Write in active voice and present tense
-- Start procedures with prerequisites
-- Include expected outcomes for major steps
-- Use descriptive, keyword-rich headings
-- Keep sentences concise but informative
+Common commands used in StackForge development:
+- `bun run dev` - Start development server
+- `bun run build` - Build for production
+- `bun run db:push` - Push database schema changes
+- `bun run db:seed` - Seed database with sample data
+- `bun run db:studio` - Open Drizzle Studio
 
-## Required page structure
+## Configuration tips
 
-Every page must start with frontmatter:
+### Environment awareness
 
-```yaml
----
-title: "Clear, specific title"
-description: "Concise description for SEO and navigation"
----
-```
+Make Windsurf aware of the environment variables used in StackForge:
+- `DATABASE_URL` - PostgreSQL connection string
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk publishable key
+- `CLERK_SECRET_KEY` - Clerk secret key
+- `NEXT_PUBLIC_APP_NAME` - Application name
+- `NEXT_PUBLIC_APP_DOMAIN` - Application domain
 
-## Mintlify components
+### Component patterns
 
-### Callouts
+StackForge follows specific component patterns:
+1. **Atomic Design**: Components organized by complexity
+2. **Container-Component Pattern**: Separation of layout and UI logic
+3. **Provider Pattern**: Global state management
+4. **TypeScript**: Strict typing for all components
 
-- `<Note>` for helpful supplementary information
-- `<Warning>` for important cautions and breaking changes
-- `<Tip>` for best practices and expert advice  
-- `<Info>` for neutral contextual information
-- `<Check>` for success confirmations
+### Database patterns
 
-### Code examples
+When working with the database:
+1. Use Drizzle ORM for all database operations
+2. Define schemas in `src/db/schema/`
+3. Use `db.query.tableName.findFirst()` for lookups
+4. Use `db.insert(tableName).values()` for creation
 
-- When appropriate, include complete, runnable examples
-- Use `<CodeGroup>` for multiple language examples
-- Specify language tags on all code blocks
-- Include realistic data, not placeholders
-- Use `<RequestExample>` and `<ResponseExample>` for API docs
+## Best practices
 
-### Procedures
+### Code generation
 
-- Use `<Steps>` component for sequential instructions
-- Include verification steps with `<Check>` components when relevant
-- Break complex procedures into smaller steps
+When generating code with Windsurf:
+1. Follow existing code patterns and conventions
+2. Use TypeScript with explicit typing
+3. Implement proper error handling
+4. Use Tailwind CSS for styling
+5. Follow accessibility guidelines
 
-### Content organization
+### Component development
 
-- Use `<Tabs>` for platform-specific content
-- Use `<Accordion>` for progressive disclosure
-- Use `<Card>` and `<CardGroup>` for highlighting content
-- Wrap images in `<Frame>` components with descriptive alt text
+When creating components:
+1. Place them in the appropriate directory under `src/components/`
+2. Use functional components with hooks
+3. Implement proper TypeScript interfaces for props
+4. Use Tailwind CSS utility classes for styling
+5. Add proper error handling and loading states
 
-## API documentation requirements
+### API development
 
-- Document all parameters with `<ParamField>` 
-- Show response structure with `<ResponseField>`
-- Include both success and error examples
-- Use `<Expandable>` for nested object properties
-- Always include authentication examples
+When creating API routes:
+1. Place them in `src/app/api/`
+2. Use proper HTTP methods
+3. Validate input with Zod schemas
+4. Implement proper error handling
+5. Use serverless function best practices
 
-## Quality standards
+### Database operations
 
-- Test all code examples before publishing
-- Use relative paths for internal links
-- Include alt text for all images
-- Ensure proper heading hierarchy (start with h2)
-- Check existing patterns for consistency
-````
+When working with database operations:
+1. Use Drizzle ORM query methods
+2. Implement proper error handling
+3. Use server components for data fetching when possible
+4. Follow validation patterns with Zod schemas

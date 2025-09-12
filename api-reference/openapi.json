@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
+    "title": "StackForge API",
+    "description": "API for the StackForge social media marketing platform",
     "license": {
       "name": "MIT"
     },
@@ -10,7 +10,7 @@
   },
   "servers": [
     {
-      "url": "http://sandbox.mintlify.com"
+      "url": "http://localhost:3000/api"
     }
   ],
   "security": [
@@ -19,9 +19,9 @@
     }
   ],
   "paths": {
-    "/plants": {
+    "/posts": {
       "get": {
-        "description": "Returns all plants from the system that the user has access to",
+        "description": "Returns all social media posts from the system",
         "parameters": [
           {
             "name": "limit",
@@ -35,13 +35,13 @@
         ],
         "responses": {
           "200": {
-            "description": "Plant response",
+            "description": "Posts response",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Plant"
+                    "$ref": "#/components/schemas/Post"
                   }
                 }
               }
@@ -60,13 +60,13 @@
         }
       },
       "post": {
-        "description": "Creates a new plant in the store",
+        "description": "Creates a new social media post",
         "requestBody": {
-          "description": "Plant to add to the store",
+          "description": "Post to add to the system",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NewPlant"
+                "$ref": "#/components/schemas/NewPost"
               }
             }
           },
@@ -74,17 +74,17 @@
         },
         "responses": {
           "200": {
-            "description": "plant response",
+            "description": "Post response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Plant"
+                  "$ref": "#/components/schemas/Post"
                 }
               }
             }
           },
           "400": {
-            "description": "unexpected error",
+            "description": "Unexpected error",
             "content": {
               "application/json": {
                 "schema": {
@@ -96,28 +96,27 @@
         }
       }
     },
-    "/plants/{id}": {
+    "/posts/{id}": {
       "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
+        "description": "Deletes a single post based on the ID supplied",
         "parameters": [
           {
             "name": "id",
             "in": "path",
-            "description": "ID of plant to delete",
+            "description": "ID of post to delete",
             "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "string"
             }
           }
         ],
         "responses": {
           "204": {
-            "description": "Plant deleted",
+            "description": "Post deleted",
             "content": {}
           },
           "400": {
-            "description": "unexpected error",
+            "description": "Unexpected error",
             "content": {
               "application/json": {
                 "schema": {
@@ -131,15 +130,15 @@
     }
   },
   "webhooks": {
-    "/plant/webhook": {
+    "/webhook": {
       "post": {
-        "description": "Information about a new plant added to the store",
+        "description": "Webhook for receiving social media updates",
         "requestBody": {
-          "description": "Plant added to the store",
+          "description": "Social media update",
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NewPlant"
+                "$ref": "#/components/schemas/WebhookPayload"
               }
             }
           }
@@ -154,41 +153,62 @@
   },
   "components": {
     "schemas": {
-      "Plant": {
+      "Post": {
         "required": [
-          "name"
+          "id",
+          "content",
+          "userId"
         ],
         "type": "object",
         "properties": {
-          "name": {
-            "description": "The name of the plant",
+          "id": {
+            "description": "The unique identifier of the post",
             "type": "string"
           },
-          "tag": {
-            "description": "Tag to specify the type",
+          "content": {
+            "description": "The content of the social media post",
+            "type": "string"
+          },
+          "userId": {
+            "description": "The ID of the user who created the post",
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "The timestamp when the post was created",
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "NewPost": {
+        "required": [
+          "content",
+          "userId"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "description": "The content of the social media post",
+            "type": "string"
+          },
+          "userId": {
+            "description": "The ID of the user who created the post",
             "type": "string"
           }
         }
       },
-      "NewPlant": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Plant"
+      "WebhookPayload": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "description": "The type of webhook event",
+            "type": "string"
           },
-          {
-            "required": [
-              "id"
-            ],
-            "type": "object",
-            "properties": {
-              "id": {
-                "description": "Identification number of the plant",
-                "type": "integer",
-                "format": "int64"
-              }
-            }
+          "data": {
+            "description": "The webhook payload data",
+            "type": "object"
           }
-        ]
+        }
       },
       "Error": {
         "required": [
