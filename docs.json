@@ -15,7 +15,25 @@
         "groups": [
           {
             "group": "Getting started",
-            "pages": ["index", "quickstart", "development", "common-commands", "updating-codebase"]
+            "pages": ["index", "quickstart", "development", "common-commands", "updating-codebase", "deployment"]
+          }
+        ]
+      },
+      {
+        "tab": "Configuration",
+        "groups": [
+          {
+            "group": "CLI",
+            "pages": ["environment-variables"]
+          }
+        ]
+      },
+      {
+        "tab": "Support",
+        "groups": [
+          {
+            "group": "Help",
+            "pages": ["faq"]
           }
         ]
       }

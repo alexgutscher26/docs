@@ -1,0 +1,198 @@
+---
+title: 'Environment Variables'
+description: 'Configuration guide for StackForge environment variables'
+---
+
+# Environment Variables
+
+StackForge uses environment variables to configure various aspects of the application, including database connections, authentication, and third-party service integrations. This guide explains all the environment variables used in StackForge and how to configure them.
+
+## Core Environment Variables
+
+These are the essential environment variables required for StackForge to function properly.
+
+### Application Configuration
+
+```env
+# App Configuration
+NEXT_PUBLIC_APP_NAME=StackForge
+NEXT_PUBLIC_APP_DOMAIN=http://localhost:3000
+```
+
+- `NEXT_PUBLIC_APP_NAME`: The name of your application, displayed in the UI
+- `NEXT_PUBLIC_APP_DOMAIN`: The domain where your application is hosted
+
+### Database Configuration
+
+```env
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/stackforge
+```
+
+- `DATABASE_URL`: PostgreSQL connection string for your database
+
+### Authentication Configuration
+
+```env
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_XXXXXXXXXXXXXXXXXXXXXXXX
+CLERK_SECRET_KEY=sk_test_XXXXXXXXXXXXXXXXXXXXXXXX
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/auth/signin
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/auth/signup
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_URL=/
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_URL=/
+```
+
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: Clerk publishable key for client-side authentication
+- `CLERK_SECRET_KEY`: Clerk secret key for server-side authentication
+- `NEXT_PUBLIC_CLERK_SIGN_IN_URL`: URL for the sign-in page
+- `NEXT_PUBLIC_CLERK_SIGN_UP_URL`: URL for the sign-up page
+- `NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_URL`: Fallback URL after sign-in
+- `NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_URL`: Fallback URL after sign-up
+
+## Optional Environment Variables
+
+These environment variables are optional but can enhance your application's functionality.
+
+### Email Service Configuration
+
+StackForge supports multiple email providers:
+
+```env
+# Resend (recommended for edge runtimes)
+RESEND_API_KEY=your_resend_api_key
+
+# Nodemailer (for Node.js runtimes)
+SMTP_HOST=smtp.yourprovider.com
+SMTP_PORT=587
+SMTP_USER=your_email@domain.com
+SMTP_PASSWORD=your_email_password
+SMTP_SECURE=false
+```
+
+### Analytics and Monitoring
+
+```env
+# Vercel Analytics (optional)
+NEXT_PUBLIC_VERCEL_ANALYTICS_ID=your_vercel_analytics_id
+
+# PostHog (optional)
+NEXT_PUBLIC_POSTHOG_KEY=your_posthog_key
+NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
+```
+
+### Feature Flags
+
+```env
+# Feature Flags
+NEXT_PUBLIC_ENABLE_DARK_MODE=true
+NEXT_PUBLIC_ENABLE_ANALYTICS=false
+NEXT_PUBLIC_MAINTENANCE_MODE=false
+```
+
+### Payment Processing
+
+```env
+# Stripe (planned for future integration)
+STRIPE_PUBLISHABLE_KEY=pk_test_XXXXXXXXXXXXXXXXXXXXXXXX
+STRIPE_SECRET_KEY=sk_test_XXXXXXXXXXXXXXXXXXXXXXXX
+STRIPE_WEBHOOK_SECRET=whsec_XXXXXXXXXXXXXXXXXXXXXXXX
+```
+
+## Environment-Specific Configuration
+
+StackForge supports different configurations for development, staging, and production environments.
+
+### Development Environment (.env.local)
+
+For local development, create a `.env.local` file with your development configuration:
+
+```env
+# Development Environment
+NEXT_PUBLIC_APP_NAME=StackForge Dev
+NEXT_PUBLIC_APP_DOMAIN=http://localhost:3000
+DATABASE_URL=postgresql://user:password@localhost:5432/stackforge_dev
+```
+
+### Production Environment
+
+For production deployments, set these environment variables in your hosting platform:
+
+```env
+# Production Environment
+NEXT_PUBLIC_APP_NAME=YourAppName
+NEXT_PUBLIC_APP_DOMAIN=https://yourdomain.com
+DATABASE_URL=postgresql://user:password@host:port/database
+```
+
+## Environment Variable Validation
+
+StackForge includes Zod-based validation for environment variables to ensure all required variables are properly configured.
+
+To enable environment variable validation, add the following to your environment:
+
+```env
+# Environment Validation
+ENABLE_ENV_VALIDATION=true
+```
+
+When enabled, the application will validate all required environment variables at startup and provide clear error messages if any are missing or invalid.
+
+## Security Best Practices
+
+When working with environment variables, follow these security best practices:
+
+1. **Never commit secrets to version control**: Always add `.env*` files to your `.gitignore`
+2. **Use different keys for different environments**: Never use production keys in development
+3. **Rotate keys regularly**: Update your API keys and secrets periodically
+4. **Limit permissions**: Ensure API keys have the minimum required permissions
+5. **Use environment-specific configurations**: Configure different settings for development, staging, and production
+
+## Adding New Environment Variables
+
+To add new environment variables to your StackForge application:
+
+1. Add the variable to your `.env.local` file for local development
+2. Update the `.env.example` file to document the new variable
+3. Add validation for the variable in the environment validation schema
+4. Configure the variable in your hosting platform for production deployment
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Missing Environment Variables**: Ensure all required variables are set in your environment
+2. **Invalid Database URL**: Verify your `DATABASE_URL` format and credentials
+3. **Clerk Authentication Errors**: Check your Clerk keys and domain settings
+4. **Email Configuration Issues**: Verify your email service credentials and settings
+
+### Debugging Environment Variables
+
+To debug environment variables in development:
+
+1. Check that your `.env.local` file exists and is properly formatted
+2. Verify that variable names match exactly (case-sensitive)
+3. Ensure there are no extra spaces or characters around the `=` sign
+4. Restart your development server after making changes
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Development Guide"
+  icon="code"
+  href="/development"
+>
+  Learn more about developing with StackForge
+</Card>
+
+<Card
+  title="Deployment Guide"
+  icon="cloud-arrow-up"
+  href="/c"
+>
+  Deploy your StackForge application to production
+</Card>
+
+</CardGroup>

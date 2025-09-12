@@ -1,0 +1,222 @@
+---
+title: "Frequently Asked Questions"
+description: "Common questions and answers about StackForge"
+---
+
+# Frequently Asked Questions
+
+This page answers the most common questions about StackForge, a production-ready SaaS boilerplate built with Next.js 14, TypeScript, and Tailwind CSS.
+
+## General Questions
+
+### What is StackForge?
+
+StackForge is a production-ready SaaS boilerplate designed to help developers build AI-powered social media marketing platforms quickly and efficiently. It provides a pre-configured setup with Clerk for authentication, Drizzle ORM with PostgreSQL, and a component-based architecture ready for extension.
+
+### Who is StackForge for?
+
+StackForge is designed for:
+- Digital marketers looking to build social media management tools
+- Content creators who need efficient content creation platforms
+- Business owners seeking to streamline their social media operations
+- Developers who want to build SaaS applications quickly
+- Teams that need a solid foundation for their web applications
+
+### What technologies does StackForge use?
+
+StackForge is built with modern web technologies:
+- **Framework**: Next.js 14 with App Router
+- **Language**: TypeScript (strict mode)
+- **Styling**: Tailwind CSS with custom configurations
+- **UI Libraries**: Shadcn UI, Aceternity UI, Magic UI
+- **State Management**: React Context API and hooks
+- **Form Handling**: React Hook Form with Zod validation
+- **Authentication**: Clerk
+- **Database**: PostgreSQL via Drizzle ORM
+- **Package Manager**: Bun
+
+### Do I need to purchase a license to use StackForge?
+
+Yes, users must purchase a license key to use StackForge in production. During development, you can use the boilerplate without a license key, but you must purchase a license before deploying to production.
+
+### How do I get access to the full repository?
+
+To access the complete StackForge repository with all features and regular updates, you need to purchase a license. The public repository contains only a limited version for demonstration purposes.
+
+## Technical Questions
+
+### What are the system requirements?
+
+To run StackForge, you need:
+- Node.js 18.x or later
+- Bun package manager (recommended)
+- PostgreSQL database instance (local or cloud)
+- Clerk account for authentication keys
+
+### How do I set up the development environment?
+
+1. Clone the repository (licensed users only)
+2. Install dependencies using `bun install`
+3. Set up environment variables in `.env.local`
+4. Run database migrations with `bun run db:migrate`
+5. Start the development server with `bun run dev`
+
+### Can I use StackForge with other databases?
+
+StackForge is configured to work with PostgreSQL via Drizzle ORM. While it may be possible to adapt it for other databases, this would require significant modifications to the database layer.
+
+### How do I deploy StackForge?
+
+StackForge is optimized for deployment on Vercel:
+1. Push your code to a GitHub repository
+2. Connect your repository to Vercel
+3. Set up the required environment variables in Vercel
+4. Deploy your application
+
+Alternative deployment platforms may require additional configuration.
+
+### How do I update StackForge?
+
+Licensed users receive regular updates. Follow our [Updating the Codebase](/updating-codebase) guide for detailed instructions on keeping your project up to date.
+
+## Development Questions
+
+### How do I create new pages?
+
+To create new pages in StackForge:
+1. Create a new directory in `src/app/` following the route group structure
+2. Add a `page.tsx` file with your page content
+3. Use TypeScript for type safety
+4. Style with Tailwind CSS utility classes
+
+### How do I add new components?
+
+To add new components:
+1. Create a new file in the appropriate directory under `src/components/`
+2. Follow the Container-Component pattern
+3. Use TypeScript interfaces for props
+4. Export components in the corresponding `index.ts` file
+
+### How do I work with the database?
+
+StackForge uses Drizzle ORM with PostgreSQL:
+- Define schemas in `src/db/schema/`
+- Use `db.query.tableName.findFirst()` for lookups
+- Use `db.insert(tableName).values()` for creation
+- Always implement proper error handling
+
+### How do I handle authentication?
+
+StackForge uses Clerk for authentication:
+- Protected routes are handled via middleware
+- Authentication state is managed through Clerk's React context
+- Use Clerk's components and hooks for sign-in/sign-up flows
+
+## Troubleshooting
+
+### I'm getting TypeScript errors. What should I do?
+
+Common TypeScript issues and solutions:
+1. Ensure all type imports use the `type` modifier when `verbatimModuleSyntax` is enabled
+2. Check that environment variables are accessed using bracket notation: `process.env["VAR_NAME"]`
+3. Verify that all functions have explicit return types
+4. Run `bun run lint` to check for code quality issues
+
+### My database connection isn't working. How can I fix it?
+
+1. Verify your `DATABASE_URL` in `.env.local` is correct
+2. Ensure your PostgreSQL instance is running
+3. Check that your database credentials are valid
+4. Run `bun run db:studio` to verify the connection
+
+### The development server won't start. What should I check?
+
+1. Ensure all required environment variables are set
+2. Check that Bun is properly installed
+3. Verify that all dependencies are installed with `bun install`
+4. Check the terminal output for specific error messages
+
+## Licensing and Support
+
+### What does the license include?
+
+The StackForge license includes:
+- Access to the complete codebase
+- Regular updates and new features
+- Priority support
+- Documentation and guides
+- Example implementations
+
+### How do I get support?
+
+For support with StackForge:
+1. Check the documentation and FAQ
+2. Review the GitHub issues for known problems
+3. Contact our support team at [support@stackforge.ai](mailto:support@stackforge.ai)
+4. Licensed users receive priority support
+
+### Can I use StackForge for multiple projects?
+
+License terms vary depending on the plan you purchase. Please check your license agreement or contact our sales team for details about using StackForge in multiple projects.
+
+### What happens if I don't renew my license?
+
+If you don't renew your license:
+- You can continue using the version of StackForge you have
+- You will no longer receive updates or new features
+- You will lose access to priority support
+- You won't be able to access new versions of the codebase
+
+## Customization
+
+### Can I customize the UI?
+
+Yes, StackForge is designed to be highly customizable:
+- Modify the color palette in `tailwind.config.ts`
+- Customize components in `src/components/`
+- Adjust layouts in `src/app/`
+- Extend the design system with your own utilities
+
+### How do I add new features?
+
+To add new features to StackForge:
+1. Follow the existing project structure
+2. Use the same technology stack and patterns
+3. Maintain consistency with the current styling
+4. Add proper error handling and validation
+
+## Performance and Security
+
+### How is StackForge optimized for performance?
+
+StackForge includes several performance optimizations:
+- Next.js SSR and SSG for fast page loads
+- Code splitting for efficient bundling
+- Image optimization with Next.js Image component
+- Proper caching strategies
+- Bundle size monitoring
+
+### Is StackForge secure?
+
+StackForge follows security best practices:
+- Secure authentication via Clerk
+- Encrypted data transmission
+- Role-based access control
+- Input validation with Zod schemas
+- Protection against common web vulnerabilities
+
+## Contributing
+
+### Can I contribute to StackForge?
+
+We welcome contributions from the community! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting any pull requests. Note that contributions to the core codebase are typically accepted only from licensed users.
+
+### How do I report bugs?
+
+To report bugs in StackForge:
+1. Check if the issue has already been reported
+2. Create a detailed bug report with steps to reproduce
+3. Include information about your environment
+4. Submit the issue to our GitHub repository
+
+If you have any other questions that aren't answered here, please contact our support team at [support@stackforge.ai](mailto:support@stackforge.ai).

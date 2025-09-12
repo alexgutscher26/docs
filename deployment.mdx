@@ -1,0 +1,303 @@
+---
+title: 'Deployment Guide'
+description: 'Learn how to deploy your StackForge application to production'
+---
+
+# Deployment Guide
+
+This guide provides comprehensive instructions for deploying your StackForge application to various hosting platforms. StackForge is optimized for Vercel but can be deployed to other platforms with minimal configuration.
+
+## Prerequisites
+
+Before deploying your StackForge application, ensure you have:
+
+1. A production-ready codebase
+2. All required environment variables configured
+3. A database instance ready for production use
+4. Accounts with your chosen deployment platform(s)
+5. A valid StackForge license for production deployment
+
+## Environment Variables
+
+Ensure all required environment variables are set in your production environment. Refer to the [Environment Variables](/environment-variables) guide for a complete list.
+
+### Required Environment Variables
+
+```env
+# App Configuration
+NEXT_PUBLIC_APP_NAME=YourAppName
+NEXT_PUBLIC_APP_DOMAIN=https://yourdomain.com
+
+# Database
+DATABASE_URL=postgresql://user:password@host:port/database
+
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_publishable_key
+CLERK_SECRET_KEY=your_secret_key
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/auth/signin
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/auth/signup
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_URL=/
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_URL=/
+```
+
+## Database Preparation
+
+Before deploying, ensure your production database is properly configured:
+
+1. Create a production database instance
+2. Run database migrations
+3. Set up any necessary database connections
+
+### Running Migrations
+
+To apply database migrations to your production database:
+
+```bash
+bun run db:migrate
+```
+
+### Seeding Production Data
+
+If you need to seed your production database with initial data:
+
+```bash
+bun run db:seed
+```
+
+## Deployment Platforms
+
+### Vercel (Recommended)
+
+StackForge is optimized for Vercel deployment. Follow these steps:
+
+1. Connect your GitHub repository to Vercel
+2. Configure environment variables in the Vercel dashboard
+3. Set up your PostgreSQL database connection
+4. Deploy your application
+
+#### Vercel Configuration
+
+In your Vercel project settings:
+
+1. Set the **Build Command** to: `bun run build`
+2. Set the **Output Directory** to: `.next`
+3. Set the **Install Command** to: `bun install`
+
+#### Environment Variables in Vercel
+
+Add all required environment variables in the Vercel dashboard under **Settings > Environment Variables**.
+
+### Other Platforms
+
+StackForge can also be deployed to other platforms with minor configuration changes.
+
+#### Docker Deployment
+
+Create a Dockerfile for your StackForge application:
+
+```dockerfile
+# Dockerfile
+FROM oven/bun:1 as base
+
+# Install dependencies
+WORKDIR /app
+COPY package.json bun.lock ./
+RUN bun install --production
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN bun run build
+
+# Production stage
+FROM oven/bun:1-deps as production
+
+WORKDIR /app
+
+# Copy built application
+COPY --from=base /app/.next ./.next
+COPY --from=base /app/node_modules ./node_modules
+COPY --from=base /app/package.json ./package.json
+
+# Expose port
+EXPOSE 3000
+
+# Start the application
+CMD ["bun", "run", "start"]
+```
+
+Build and run your Docker container:
+
+```bash
+docker build -t stackforge .
+docker run -p 3000:3000 stackforge
+```
+
+#### Cloudflare Pages
+
+To deploy to Cloudflare Pages:
+
+1. Connect your Git repository to Cloudflare Pages
+2. Set the **Build command** to: `bun run build`
+3. Set the **Build output directory** to: `.next`
+4. Configure environment variables in the Cloudflare dashboard
+
+#### Fly.io
+
+To deploy to Fly.io:
+
+1. Install the Fly CLI
+2. Run `fly launch` in your project directory
+3. Configure your Fly.io settings
+4. Set environment variables using `fly secrets set`
+5. Deploy with `fly deploy`
+
+## Post-Deployment Checklist
+
+After deploying your application, verify the following:
+
+### Application Health
+
+- [ ] Application loads without errors
+- [ ] All pages are accessible
+- [ ] Authentication flows work correctly
+- [ ] Database connections are functioning
+- [ ] API endpoints respond correctly
+
+### Performance Optimization
+
+- [ ] Enable CDN caching
+- [ ] Configure proper HTTP headers
+- [ ] Set up monitoring and analytics
+- [ ] Optimize database queries
+- [ ] Implement proper error handling
+
+### Security Considerations
+
+- [ ] HTTPS is enabled
+- [ ] Security headers are configured
+- [ ] Environment variables are properly secured
+- [ ] Database connections use secure credentials
+- [ ] Authentication tokens are properly managed
+
+## Monitoring and Maintenance
+
+### Error Tracking
+
+Set up error tracking with services like Sentry:
+
+```env
+# Sentry Configuration
+NEXT_PUBLIC_SENTRY_DSN=your_sentry_dsn
+SENTRY_AUTH_TOKEN=your_sentry_auth_token
+```
+
+### Performance Monitoring
+
+Implement performance monitoring with tools like:
+
+- Vercel Analytics
+- PostHog
+- Custom logging solutions
+
+### Regular Maintenance Tasks
+
+1. **Database Maintenance**
+   - Regular backups
+   - Performance optimization
+   - Security updates
+
+2. **Dependency Updates**
+   - Regular security audits
+   - Dependency updates
+   - Compatibility testing
+
+3. **Performance Reviews**
+   - Monitor load times
+   - Optimize assets
+   - Review caching strategies
+
+## Troubleshooting Common Issues
+
+### Build Failures
+
+1. Check that all dependencies are properly installed
+2. Verify environment variables are correctly set
+3. Ensure the build command is correct: `bun run build`
+
+### Runtime Errors
+
+1. Check application logs for error messages
+2. Verify database connections
+3. Confirm environment variables are properly configured
+
+### Database Connection Issues
+
+1. Verify `DATABASE_URL` format and credentials
+2. Check database firewall settings
+3. Ensure the database is accessible from your deployment platform
+
+### Authentication Problems
+
+1. Verify Clerk keys are correct
+2. Check domain configurations in Clerk dashboard
+3. Ensure redirect URLs are properly configured
+
+## Scaling Your Application
+
+### Horizontal Scaling
+
+For high-traffic applications:
+
+1. Use a load balancer
+2. Implement caching strategies
+3. Use CDN for static assets
+4. Optimize database queries
+
+### Database Scaling
+
+1. Use connection pooling
+2. Implement read replicas
+3. Optimize queries with indexes
+4. Consider database sharding for large datasets
+
+## Backup and Recovery
+
+### Database Backups
+
+Implement regular database backups:
+
+1. Automated backup schedules
+2. Off-site storage of backups
+3. Regular restoration testing
+4. Point-in-time recovery options
+
+### Application Backups
+
+1. Version control all application code
+2. Backup environment configurations
+3. Document deployment procedures
+4. Maintain rollback procedures
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Environment Variables"
+  icon="settings"
+  href="/environment-variables"
+>
+  Learn more about configuring environment variables
+</Card>
+
+<Card
+  title="Updating Codebase"
+  icon="arrow-up-circle"
+  href="/updating-codebase"
+>
+  Learn how to update your deployed application
+</Card>
+
+</CardGroup>
