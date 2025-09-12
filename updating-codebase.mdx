@@ -1,0 +1,350 @@
+---
+title: "Updating the Codebase"
+description: "Guide to keeping your StackForge project up to date with the latest changes"
+---
+
+# Updating the Codebase
+
+This guide explains how to keep your StackForge project up to date with the latest improvements, security patches, and feature additions. Regular updates ensure you benefit from performance improvements, bug fixes, and new functionality.
+
+<Note>
+  **Repository Access**: 
+  This documentation is part of the StackForge boilerplate. To access the full repository and receive updates, users must purchase a license. The public repository contains only a limited version for demonstration purposes. Licensed users gain access to the complete codebase, regular updates, and premium features.
+</Note>
+
+## Understanding StackForge Updates
+
+StackForge follows semantic versioning (SemVer) for releases:
+- **Major versions** (1.x.x): Breaking changes, significant new features
+- **Minor versions** (x.1.x): New features, backward-compatible
+- **Patch versions** (x.x.1): Bug fixes, security patches, minor improvements
+
+## Before You Update
+
+### 1. Backup Your Project
+
+Always create a backup of your project before updating:
+
+```bash
+# Create a git commit with all current changes
+git add .
+git commit -m "Backup before updating StackForge"
+
+# Create a tag for easy reference
+git tag backup-before-update-$(date +%Y%m%d)
+```
+
+### 2. Review Release Notes
+
+Check the [GitHub releases page](https://github.com/Shreyas-29/StackForge-ai/releases) for:
+- Breaking changes
+- Migration guides
+- New features
+- Deprecation notices
+
+### 3. Check Custom Code
+
+Identify any custom modifications you've made to:
+- Configuration files
+- Component files
+- Database schema
+- API routes
+- Styles
+
+### 4. Verify License Status
+
+<Note>
+  **License Requirement**: 
+  Users must purchase a license key to use StackForge in production. During development, you can use the boilerplate without a license key, but you must purchase a license before deploying to production. Some updates may include features that require a valid license key to function.
+</Note>
+
+## Updating Methods
+
+### Method 1: Package Updates (Recommended for Patch/Minor Updates)
+
+For patch and minor updates, simply update your dependencies:
+
+```bash
+# Update all dependencies to their latest versions
+bun update
+
+# Or update specific packages
+bun update next @clerk/nextjs drizzle-orm
+```
+
+After updating, run your development server to check for any issues:
+
+```bash
+bun run dev
+```
+
+### Method 2: Git Merge (For Major Updates)
+
+For major updates or when you want to incorporate new features:
+
+1. Add the upstream repository as a remote:
+
+```bash
+git remote add upstream https://github.com/Shreyas-29/StackForge-ai.git
+```
+
+2. Fetch the latest changes:
+
+```bash
+git fetch upstream
+```
+
+3. Create a new branch for the update:
+
+```bash
+git checkout -b update-stackforge-$(date +%Y%m%d)
+```
+
+4. Merge the changes:
+
+```bash
+git merge upstream/main
+```
+
+5. Resolve any conflicts that arise.
+
+### Method 3: Selective File Updates
+
+For targeted updates to specific components or features:
+
+1. Identify the files you want to update by checking the commit history
+2. Download or copy the updated files from the main repository
+3. Carefully merge your customizations with the new code
+
+## Handling Breaking Changes
+
+When encountering breaking changes:
+
+### 1. Read Migration Guides
+
+Each major release includes migration guides in the release notes. Follow these step-by-step instructions.
+
+### 2. Update Configuration Files
+
+Some updates may require changes to:
+- `next.config.mjs`
+- `tailwind.config.ts`
+- `tsconfig.json`
+- `drizzle.config.ts`
+
+### 3. Update Environment Variables
+
+Check if new environment variables are required:
+
+```bash
+# Compare your .env.local with .env.example
+diff .env.local .env.example
+```
+
+### 4. Database Migrations
+
+If database schema changes are introduced:
+
+```bash
+# Generate new migrations
+bun run db:generate
+
+# Apply migrations
+bun run db:migrate
+```
+
+## Testing After Updates
+
+### 1. Run Development Server
+
+```bash
+bun run dev
+```
+
+Check for any compilation errors or warnings in the console.
+
+### 2. Test Core Functionality
+
+Verify that these key features still work:
+- Authentication (sign in, sign up, sign out)
+- Database operations (create, read, update, delete)
+- API routes
+- Dashboard pages
+- Marketing pages
+
+### 3. Run Linting
+
+```bash
+bun run lint
+```
+
+### 4. Check Formatting
+
+```bash
+bun run format:check
+```
+
+## Common Update Issues
+
+### Dependency Conflicts
+
+If you encounter dependency conflicts:
+
+```bash
+# Remove node_modules and lock file
+rm -rf node_modules bun.lock
+
+# Reinstall dependencies
+bun install
+```
+
+### TypeScript Errors
+
+If TypeScript errors appear after updates:
+1. Check for any breaking changes in the release notes
+2. Update your code to match new type requirements
+3. Clear TypeScript cache:
+
+```bash
+# Remove TypeScript build cache
+rm -rf .next
+```
+
+### Database Issues
+
+If database-related errors occur:
+1. Check if new migrations are required
+2. Verify your database connection string
+3. Ensure your database schema matches the code
+
+```bash
+# Push schema changes (development only)
+bun run db:push
+
+# Or generate and apply migrations
+bun run db:generate
+bun run db:migrate
+```
+
+## Automating Updates
+
+### GitHub Dependabot
+
+Enable Dependabot to automatically create pull requests for dependency updates:
+
+1. Create `.github/dependabot.yml`:
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+```
+
+### Update Scripts
+
+Create a script to automate routine updates:
+
+```bash
+#!/bin/bash
+# update-stackforge.sh
+
+echo "Updating StackForge dependencies..."
+bun update
+
+echo "Running lint check..."
+bun run lint
+
+echo "Checking code formatting..."
+bun run format:check
+
+echo "Update complete. Please test your application."
+```
+
+## Best Practices
+
+### 1. Regular Updates
+
+- Update dependencies monthly for security patches
+- Update major versions when needed for new features
+- Always test updates in a development environment first
+
+### 2. Version Pinning
+
+For production environments, consider pinning critical dependencies to specific versions to avoid unexpected breaking changes.
+
+### 3. Monitor Security Advisories
+
+Subscribe to security advisories for your key dependencies:
+- Next.js
+- React
+- Clerk
+- Drizzle ORM
+- Tailwind CSS
+
+### 4. Keep a Change Log
+
+Maintain a log of updates and changes made to your project for future reference.
+
+## When to Update
+
+### Immediate Updates
+
+Update immediately for:
+- Security patches
+- Critical bug fixes
+- Dependency vulnerabilities
+
+### Scheduled Updates
+
+Plan updates for:
+- New feature releases
+- Performance improvements
+- Developer experience enhancements
+
+### Major Version Updates
+
+For major version updates:
+- Review release notes thoroughly
+- Test in a separate branch
+- Update during planned maintenance windows
+- Have a rollback plan ready
+
+## Rollback Procedure
+
+If an update causes issues:
+
+1. Revert to the previous commit:
+
+```bash
+git reset --hard backup-before-update-20250912
+```
+
+2. Restore dependencies:
+
+```bash
+rm -rf node_modules bun.lock
+bun install
+```
+
+3. Restore database (if needed):
+
+```bash
+# This depends on your backup strategy
+```
+
+4. Test the rollback to ensure everything works correctly.
+
+## Getting Help
+
+If you encounter issues during updates:
+
+1. Check the [GitHub issues](https://github.com/Shreyas-29/StackForge-ai/issues)
+2. Review the documentation
+3. Reach out to the community on Discord or GitHub Discussions
+4. Contact support if you have a commercial license
+
+Regular updates are essential for maintaining a secure, performant, and feature-rich application. By following this guide, you can keep your StackForge project up to date while minimizing risks and downtime.

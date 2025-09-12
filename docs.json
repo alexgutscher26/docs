@@ -15,7 +15,7 @@
         "groups": [
           {
             "group": "Getting started",
-            "pages": ["index", "quickstart", "development", "common-commands"]
+            "pages": ["index", "quickstart", "development", "common-commands", "updating-codebase"]
           }
         ]
       }

@@ -5,7 +5,7 @@ description: "Reference for common commands used in StackForge development"
 
 # Common Commands
 
-This guide provides a quick reference for the most commonly used commands when developing with StackForge. These commands cover development, building, database management, code quality, and other essential tasks.
+This guide provides a quick reference for the most commonly used commands when developing with StackForge. These commands cover development, building, database management, code quality, and other essential tasks that are actually configured in the project.
 
 ## Development Commands
 
@@ -105,62 +105,6 @@ Check if code is properly formatted without making changes:
 bun run format:check
 ```
 
-## Testing Commands
-
-### Run Unit Tests
-
-Run unit tests (if configured):
-
-```bash
-bun test
-```
-
-### Run Tests in Watch Mode
-
-Run tests in watch mode for development:
-
-```bash
-bun test --watch
-```
-
-## Component Development Commands
-
-### Generate New Components
-
-Create new components using the shadcn/ui CLI (if installed):
-
-```bash
-bunx shadcn-ui@latest add [component-name]
-```
-
-## Environment Commands
-
-### Check Environment Variables
-
-Validate environment variables (implementation needed):
-
-```bash
-bun run env:check
-```
-
-## Deployment Commands
-
-### Deploy to Vercel
-
-Deploy to Vercel (requires Vercel CLI):
-
-```bash
-vercel deploy
-```
-
-### Deploy Preview
-
-Deploy a preview version:
-
-```bash
-vercel deploy --preview
-```
-
 ## Package Management Commands
 
 ### Install Dependencies
@@ -195,6 +139,16 @@ Remove a dependency:
 bun remove [package-name]
 ```
 
+## Component Development Commands
+
+### Generate New Components
+
+Create new components using the shadcn/ui CLI (if installed):
+
+```bash
+bunx shadcn-ui@latest add [component-name]
+```
+
 ## Advanced Development Commands
 
 ### Enable Turbopack
@@ -213,82 +167,11 @@ Build for production with Turbopack:
 bun run build --turbo
 ```
 
-### Analyze Bundle Size
-
-Analyze the bundle size (if bundle analyzer is installed):
-
-```bash
-bun run analyze
-```
-
-## Docker Commands (if Docker is configured)
-
-### Build Docker Image
-
-Build the Docker image:
-
-```bash
-docker build -t stackforge .
-```
-
-### Run Docker Container
-
-Run the application in a Docker container:
-
-```bash
-docker run -p 3000:3000 stackforge
-```
-
-### Run Docker Compose
-
-Run the application with Docker Compose (if configured):
-
-```bash
-docker-compose up
-```
-
-## Git Hooks Commands
-
-### Run Pre-commit Hooks
-
-Run pre-commit hooks manually:
-
-```bash
-bun run pre-commit
-```
-
-### Run Commit Lint
-
-Lint commit messages:
-
-```bash
-bun run commitlint
-```
-
-## Additional Utilities
-
-### Generate Types
-
-Generate TypeScript types (if configured):
-
-```bash
-bun run gen:types
-```
-
-### Generate Documentation
-
-Generate documentation (if configured):
-
-```bash
-bun run gen:docs
-```
-
 ## Notes
 
 - All commands should be run from the root directory of your StackForge project
 - Make sure you have Bun installed and properly configured
-- Some commands may require additional setup or configuration
 - Always check the terminal output for any errors or warnings
 - For production deployments, ensure all environment variables are properly set
 
-This reference should cover most of the common tasks you'll encounter while developing with StackForge. For more detailed information about specific features, please refer to the other guides in this documentation.
+This reference covers all the commands that are currently configured in StackForge. For more detailed information about specific features, please refer to the other guides in this documentation.
