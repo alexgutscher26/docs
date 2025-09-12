@@ -10,13 +10,8 @@ Set up your local development environment and start building your AI-powered soc
 ### Step 1: Set up your local environment
 
 <AccordionGroup>
-  <Accordion icon="copy" title="Clone the repository">
-    First, clone the StackForge repository to your local machine:
-    
-    ```bash
-    git clone https://github.com/Shreyas-29/StackForge-ai.git
-    cd StackForge-ai
-    ```
+  <Accordion icon="copy" title="Obtain the StackForge boilerplate">
+    First, you'll need to purchase a license to access the StackForge boilerplate. Once you have your license, download and extract the boilerplate files to your local machine.
   </Accordion>
   <Accordion icon="rectangle-terminal" title="Install dependencies">
     StackForge uses Bun as its package manager. Install all dependencies with:
@@ -91,6 +86,26 @@ Set up your local development environment and start building your AI-powered soc
     - Explore the API endpoints at `/api/posts`
   </Accordion>
 </AccordionGroup>
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- Node.js version 18 or higher
+- Bun package manager
+- PostgreSQL database instance (local or cloud)
+- Clerk account for authentication
+
+If you don't have Bun installed, follow the [official installation guide](https://bun.sh/docs/installation).
+
+## License validation
+
+<Note>
+  **License requirement**: 
+  StackForge requires a valid license key for production use. During development, you can use the boilerplate without a license key, but you must purchase a license before deploying to production.
+  
+  The license validation system expects a valid key in the `/license` directory (gitignored). For development purposes, this requirement is bypassed.
+</Note>
 
 ## Next steps
 
