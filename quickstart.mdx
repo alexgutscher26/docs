@@ -1,6 +1,6 @@
 ---
-title: "Quickstart"
-description: "Get your StackForge boilerplate up and running in minutes"
+title: 'Quickstart'
+description: 'Get your StackForge boilerplate up and running in minutes'
 ---
 
 ## Get started in three steps
@@ -39,8 +39,9 @@ Set up your local development environment and start building your AI-powered soc
     NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_URL=/
     NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_URL=/
     ```
-    
+
     You'll need to create accounts with [Clerk](https://clerk.dev/) and set up a PostgreSQL database to get the required keys and connection string.
+
   </Accordion>
 </AccordionGroup>
 
@@ -48,17 +49,11 @@ Set up your local development environment and start building your AI-powered soc
 
 <AccordionGroup>
   <Accordion icon="database" title="Run database migrations">
-    StackForge uses Drizzle ORM with PostgreSQL. Push the schema to your database:
-    
-    ```bash
-    bun run db:push
-    ```
+    StackForge uses Drizzle ORM with PostgreSQL. Push the schema to your
+    database: ```bash bun run db:push ```
   </Accordion>
   <Accordion icon="seedling" title="(Optional) Seed the database">
-    Populate your database with sample data for testing:
-    
-    ```bash
-    bun run db:seed
+    Populate your database with sample data for testing: ```bash bun run db:seed
     ```
   </Accordion>
 </AccordionGroup>
@@ -67,23 +62,19 @@ Set up your local development environment and start building your AI-powered soc
 
 <AccordionGroup>
   <Accordion icon="rocket" title="Run the development server">
-    Start the Next.js development server:
-    
-    ```bash
-    bun run dev
-    ```
-    
-    Open [http://localhost:3000](http://localhost:3000) in your browser to see your StackForge application running!
-    
-    <Tip>Your development server will automatically reload when you make changes to the code.</Tip>
+    Start the Next.js development server: ```bash bun run dev ``` Open
+    [http://localhost:3000](http://localhost:3000) in your browser to see your
+    StackForge application running!
+    <Tip>
+      Your development server will automatically reload when you make changes to
+      the code.
+    </Tip>
   </Accordion>
   <Accordion icon="globe" title="Explore the application">
-    Once the server is running, you can:
-    
-    - Visit the marketing pages at the root URL
-    - Navigate to `/dashboard` to see the authenticated dashboard
-    - Try the authentication flows at `/auth/signin` and `/auth/signup`
-    - Explore the API endpoints at `/api/posts`
+    Once the server is running, you can: - Visit the marketing pages at the root
+    URL - Navigate to `/dashboard` to see the authenticated dashboard - Try the
+    authentication flows at `/auth/signin` and `/auth/signup` - Explore the API
+    endpoints at `/api/posts`
   </Accordion>
 </AccordionGroup>
 
@@ -101,10 +92,11 @@ If you don't have Bun installed, follow the [official installation guide](https:
 ## License validation
 
 <Note>
-  **License requirement**: 
-  StackForge requires a valid license key for production use. During development, you can use the boilerplate without a license key, but you must purchase a license before deploying to production.
-  
-  The license validation system expects a valid key in the `/license` directory (gitignored). For development purposes, this requirement is bypassed.
+  **License requirement**: StackForge requires a valid license key for
+  production use. During development, you can use the boilerplate without a
+  license key, but you must purchase a license before deploying to production.
+  The license validation system expects a valid key in the `/license` directory
+  (gitignored). For development purposes, this requirement is bypassed.
 </Note>
 
 ## Next steps
@@ -114,15 +106,22 @@ Now that you have StackForge running locally, explore these key features and cus
 <CardGroup cols={2}>
 
 <Card title="Project Structure" icon="folder-tree" href="/development">
-  Learn about the StackForge directory structure and where to find key components.
+  Learn about the StackForge directory structure and where to find key
+  components.
 </Card>
 
-<Card title="Customize the Dashboard" icon="palette" href="/essentials/settings">
+<Card
+  title="Customize the Dashboard"
+  icon="palette"
+  href="/essentials/settings"
+>
   Modify the dashboard layout, navigation, and branding to match your needs.
 </Card>
 
 </CardGroup>
 
 <Note>
-  **Need help?** Check out the [development guide](/development) for detailed information about extending StackForge, or reach out through our [GitHub repository](https://github.com/Shreyas-29/StackForge-ai).
+  **Need help?** Check out the [development guide](/development) for detailed
+  information about extending StackForge, or reach out through our [GitHub
+  repository](https://github.com/Shreyas-29/StackForge-ai).
 </Note>

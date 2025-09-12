@@ -1,6 +1,6 @@
 ---
-title: "Development Guide"
-description: "Comprehensive guide for developing with StackForge"
+title: 'Development Guide'
+description: 'Comprehensive guide for developing with StackForge'
 ---
 
 # Development Guide
@@ -47,11 +47,13 @@ src/
    - Clerk account for authentication
 
 2. Install dependencies:
+
    ```bash
    bun install
    ```
 
 3. Set up environment variables in `.env.local`:
+
    ```env
    # App Configuration
    NEXT_PUBLIC_APP_NAME=StackForge
@@ -74,21 +76,25 @@ src/
 StackForge uses Drizzle ORM with PostgreSQL. Here are the available database commands:
 
 - **Push schema changes** (development only):
+
   ```bash
   bun run db:push
   ```
 
 - **Generate migrations**:
+
   ```bash
   bun run db:generate
   ```
 
 - **Apply migrations**:
+
   ```bash
   bun run db:migrate
   ```
 
 - **Open Drizzle Studio** for database management:
+
   ```bash
   bun run db:studio
   ```
@@ -101,6 +107,7 @@ StackForge uses Drizzle ORM with PostgreSQL. Here are the available database com
 ### Running the Development Server
 
 Start the development server with:
+
 ```bash
 bun run dev
 ```
@@ -127,60 +134,64 @@ When creating new components, follow these guidelines:
 5. Export components in the corresponding `index.ts` file
 
 Example component structure:
+
 ```tsx
 // src/components/ui/button.tsx
-import { cva, type VariantProps } from "class-variance-authority"
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cn } from "@/functions"
+import { cva, type VariantProps } from 'class-variance-authority';
+import * as React from 'react';
+import { Slot } from '@radix-ui/react-slot';
+import { cn } from '@/functions';
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background",
+  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background',
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-input hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "underline-offset-4 hover:underline text-primary",
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+        destructive:
+          'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+        outline:
+          'border border-input hover:bg-accent hover:text-accent-foreground',
+        secondary:
+          'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        ghost: 'hover:bg-accent hover:text-accent-foreground',
+        link: 'underline-offset-4 hover:underline text-primary',
       },
       size: {
-        default: "h-10 py-2 px-4",
-        sm: "h-9 px-3 rounded-md",
-        lg: "h-11 px-8 rounded-md",
-        icon: "h-10 w-10",
+        default: 'h-10 py-2 px-4',
+        sm: 'h-9 px-3 rounded-md',
+        lg: 'h-11 px-8 rounded-md',
+        icon: 'h-10 w-10',
       },
     },
     defaultVariants: {
-      variant: "default",
-      size: "default",
+      variant: 'default',
+      size: 'default',
     },
   }
-)
+);
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
-  asChild?: boolean
+  asChild?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button"
+    const Comp = asChild ? Slot : 'button';
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
         {...props}
       />
-    )
+    );
   }
-)
-Button.displayName = "Button"
+);
+Button.displayName = 'Button';
 
-export { Button, buttonVariants }
+export { Button, buttonVariants };
 ```
 
 ## API Development
@@ -195,46 +206,47 @@ API routes are located in `src/app/api/`. Follow these patterns:
 4. Use server-side database operations through Drizzle ORM
 
 Example API route:
+
 ```ts
 // src/app/api/posts/route.ts
-import { db } from "@/db"
-import { posts } from "@/db/schema"
-import { createPostSchema } from "@/schema"
-import { eq } from "drizzle-orm"
-import { NextResponse } from "next/server"
-import { z } from "zod"
+import { db } from '@/db';
+import { posts } from '@/db/schema';
+import { createPostSchema } from '@/schema';
+import { eq } from 'drizzle-orm';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 export async function GET() {
   try {
-    const result = await db.select().from(posts)
-    return NextResponse.json(result)
+    const result = await db.select().from(posts);
+    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to fetch posts" },
+      { error: 'Failed to fetch posts' },
       { status: 500 }
-    )
+    );
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const parsed = createPostSchema.parse(body)
-    
-    const result = await db.insert(posts).values(parsed).returning()
-    return NextResponse.json(result[0])
+    const body = await request.json();
+    const parsed = createPostSchema.parse(body);
+
+    const result = await db.insert(posts).values(parsed).returning();
+    return NextResponse.json(result[0]);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid request data", details: error.errors },
+        { error: 'Invalid request data', details: error.errors },
         { status: 400 }
-      )
+      );
     }
-    
+
     return NextResponse.json(
-      { error: "Failed to create post" },
+      { error: 'Failed to create post' },
       { status: 500 }
-    )
+    );
   }
 }
 ```
@@ -249,32 +261,33 @@ export async function POST(request: Request) {
 4. Apply migrations with `bun run db:migrate`
 
 Example schema definition:
+
 ```ts
 // src/db/schema/post.ts
-import { relations } from "drizzle-orm"
-import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core"
-import { users } from "./user"
+import { relations } from 'drizzle-orm';
+import { integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { users } from './user';
 
-export const posts = pgTable("posts", {
+export const posts = pgTable('posts', {
   id: integer().primaryKey().generatedByDefaultAsIdentity(),
-  title: text("title").notNull(),
-  content: text("content").notNull(),
-  userId: integer("user_id")
+  title: text('title').notNull(),
+  content: text('content').notNull(),
+  userId: integer('user_id')
     .notNull()
     .references(() => users.id),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at")
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at')
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-})
+});
 
 export const postsRelations = relations(posts, ({ one }) => ({
   user: one(users, {
     fields: [posts.userId],
     references: [users.id],
   }),
-}))
+}));
 ```
 
 ## Styling and UI
@@ -292,20 +305,20 @@ Customize Tailwind in `tailwind.config.ts`. StackForge includes several plugins:
 StackForge implements both dark and light mode using `next-themes`. Use the `useTheme` hook to access and modify theme settings:
 
 ```tsx
-import { useTheme } from "next-themes"
+import { useTheme } from 'next-themes';
 
 const ThemeToggle = () => {
-  const { theme, setTheme } = useTheme()
-  
+  const { theme, setTheme } = useTheme();
+
   return (
     <button
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       className="p-2 rounded-md bg-gray-200 dark:bg-gray-700"
     >
-      Toggle {theme === "dark" ? "Light" : "Dark"} Mode
+      Toggle {theme === 'dark' ? 'Light' : 'Dark'} Mode
     </button>
-  )
-}
+  );
+};
 ```
 
 ## Authentication
@@ -320,17 +333,18 @@ StackForge uses Clerk for authentication. Key features include:
 ### Protecting Routes
 
 Use middleware to protect routes:
+
 ```ts
 // src/middleware.ts
-import { authMiddleware } from "@clerk/nextjs"
+import { authMiddleware } from '@clerk/nextjs';
 
 export default authMiddleware({
-  publicRoutes: ["/", "/api/webhooks(.*)"],
-})
+  publicRoutes: ['/', '/api/webhooks(.*)'],
+});
 
 export const config = {
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
-}
+  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
+};
 ```
 
 ## Testing
@@ -338,32 +352,34 @@ export const config = {
 ### Unit Testing
 
 Write unit tests for utility functions and components:
+
 ```ts
 // Example test for a utility function
-import { describe, it, expect } from "bun:test"
-import { cn } from "@/functions"
+import { describe, it, expect } from 'bun:test';
+import { cn } from '@/functions';
 
-describe("cn", () => {
-  it("should merge class names correctly", () => {
-    const result = cn("class1", "class2")
-    expect(result).toBe("class1 class2")
-  })
-})
+describe('cn', () => {
+  it('should merge class names correctly', () => {
+    const result = cn('class1', 'class2');
+    expect(result).toBe('class1 class2');
+  });
+});
 ```
 
 ### Component Testing
 
 Use React Testing Library for component tests:
-```tsx
-import { render, screen } from "@testing-library/react"
-import { Button } from "@/components/ui/button"
 
-describe("Button", () => {
-  it("should render correctly", () => {
-    render(<Button>Click me</Button>)
-    expect(screen.getByText("Click me")).toBeInTheDocument()
-  })
-})
+```tsx
+import { render, screen } from '@testing-library/react';
+import { Button } from '@/components/ui/button';
+
+describe('Button', () => {
+  it('should render correctly', () => {
+    render(<Button>Click me</Button>);
+    expect(screen.getByText('Click me')).toBeInTheDocument();
+  });
+});
 ```
 
 ## Performance Optimization
@@ -371,29 +387,26 @@ describe("Button", () => {
 ### Code Splitting
 
 Use dynamic imports for code splitting:
-```tsx
-import dynamic from "next/dynamic"
 
-const HeavyComponent = dynamic(() => import("@/components/heavy-component"), {
+```tsx
+import dynamic from 'next/dynamic';
+
+const HeavyComponent = dynamic(() => import('@/components/heavy-component'), {
   loading: () => <p>Loading...</p>,
   ssr: false,
-})
+});
 ```
 
 ### Image Optimization
 
 Use Next.js Image component for optimized images:
+
 ```tsx
-import Image from "next/image"
+import Image from 'next/image';
 
 const OptimizedImage = () => (
-  <Image
-    src="/path/to/image.jpg"
-    alt="Description"
-    width={500}
-    height={300}
-  />
-)
+  <Image src="/path/to/image.jpg" alt="Description" width={500} height={300} />
+);
 ```
 
 ## Deployment
@@ -401,6 +414,7 @@ const OptimizedImage = () => (
 ### Building for Production
 
 Create a production build with:
+
 ```bash
 bun run build
 ```
@@ -408,6 +422,7 @@ bun run build
 ### Environment Variables for Production
 
 Ensure all environment variables are set for production:
+
 ```env
 # App Configuration
 NEXT_PUBLIC_APP_NAME=StackForge
