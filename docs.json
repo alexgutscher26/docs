@@ -82,6 +82,13 @@
               "security/row-level-security",
               "security/database-security"
             ]
+          },
+          {
+            "group": "Data Fetching",
+            "pages": [
+              "data-fetching/index",
+              "data-fetching/csrf-protection"
+            ]
           }
          ]
       },

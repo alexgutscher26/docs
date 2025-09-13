@@ -1,0 +1,292 @@
+---
+title: 'CSRF Protection'
+description: 'Protect your API routes against CSRF attacks in StackForge'
+---
+
+# CSRF Protection
+
+Cross-Site Request Forgery (CSRF) protection is a security measure that helps prevent unauthorized commands from being transmitted from a user that the web application trusts.
+
+## Overview
+
+In StackForge, all POST, PUT, PATCH, and DELETE requests to your API routes are protected against CSRF attacks by default. This means you need to send a CSRF token with these requests, otherwise they will be rejected.
+
+## How CSRF Protection Works
+
+StackForge implements CSRF protection middleware that validates requests to ensure they originate from your application. This protection helps prevent malicious websites from making unauthorized requests on behalf of authenticated users.
+
+### Exceptions
+
+There are two exceptions to CSRF protection:
+
+1. **Server Actions**: When using Next.js Server Actions, protection is built-in and you don't need to worry about it.
+2. **API Routes under /api**: Routes under the `/api` path have CSRF protection disabled, as this prefix is typically used for webhooks or external services that need to access your API.
+
+## Implementing CSRF Protection
+
+### Client-Side Implementation
+
+When making requests to protected API routes from the client-side, you need to include the CSRF token in the request headers.
+
+First, install the required dependencies:
+
+```bash
+bun add csurf cookie-parser
+```
+
+Then, you can retrieve and use the CSRF token in your components:
+
+```tsx
+'use client';
+
+import { useGetCsrfToken } from '@/hooks/use-csrf-token';
+
+function MyComponent() {
+  const csrfToken = useGetCsrfToken();
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    const response = await fetch('/api/posts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken,
+      },
+      body: JSON.stringify({ 
+        title: 'My New Post',
+        content: 'This is the content of my post'
+      }),
+    });
+    
+    if (response.ok) {
+      // Handle success
+      console.log('Post created successfully');
+    } else {
+      // Handle error
+      console.error('Failed to create post');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input type="text" name="title" placeholder="Title" />
+      <textarea name="content" placeholder="Content"></textarea>
+      <button type="submit">Create Post</button>
+    </form>
+  );
+}
+```
+
+### Server-Side Implementation
+
+On the server-side, the CSRF protection middleware automatically validates the token for protected routes:
+
+```typescript
+// src/app/api/posts/route.ts
+import { NextResponse } from 'next/server';
+import { verifyCsrfToken } from '@/lib/csrf';
+
+export async function POST(request: Request) {
+  // The CSRF middleware will automatically validate the token
+  // before this function is called
+  
+  try {
+    const body = await request.json();
+    
+    // Process the request
+    const newPost = {
+      id: Math.random().toString(36).substring(7),
+      title: body.title,
+      content: body.content,
+      createdAt: new Date().toISOString(),
+    };
+    
+    // Save to database (in a real implementation)
+    
+    return NextResponse.json(newPost, { status: 201 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Failed to create post' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+### Custom CSRF Hook
+
+You can create a custom hook to retrieve the CSRF token:
+
+```typescript
+// src/hooks/use-csrf-token.ts
+'use client';
+
+import { useEffect, useState } from 'react';
+
+export function useGetCsrfToken() {
+  const [csrfToken, setCsrfToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCsrfToken = async () => {
+      try {
+        const response = await fetch('/api/csrf-token');
+        const data = await response.json();
+        setCsrfToken(data.csrfToken);
+      } catch (error) {
+        console.error('Failed to fetch CSRF token:', error);
+      }
+    };
+
+    fetchCsrfToken();
+  }, []);
+
+  return csrfToken;
+}
+```
+
+And the corresponding API route to provide the CSRF token:
+
+```typescript
+// src/app/api/csrf-token/route.ts
+import { NextResponse } from 'next/server';
+import { generateCsrfToken } from '@/lib/csrf';
+
+export async function GET() {
+  try {
+    const csrfToken = generateCsrfToken();
+    
+    // Set the token as an HTTP-only cookie
+    const response = NextResponse.json({ csrfToken });
+    response.cookies.set('csrf-token', csrfToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60, // 1 hour
+    });
+    
+    return response;
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Failed to generate CSRF token' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## CSRF Protection Library
+
+StackForge uses a CSRF protection library to handle token generation and validation:
+
+```typescript
+// src/lib/csrf.ts
+import crypto from 'crypto';
+
+const CSRF_SECRET = process.env.CSRF_SECRET || 'your-secret-key';
+
+export function generateCsrfToken(): string {
+  return crypto
+    .createHash('sha256')
+    .update(crypto.randomBytes(32).toString('hex') + CSRF_SECRET)
+    .digest('hex');
+}
+
+export function verifyCsrfToken(token: string): boolean {
+  // In a real implementation, you would verify the token against
+  // the one stored in the user's session or cookies
+  return token.length > 0; // Simplified for example
+}
+```
+
+## Best Practices
+
+1. **Always use HTTPS**: CSRF protection works best when combined with HTTPS to prevent token interception.
+
+2. **Store tokens securely**: Store CSRF tokens in HTTP-only cookies to prevent XSS attacks from accessing them.
+
+3. **Regenerate tokens**: Regenerate CSRF tokens periodically or after significant actions.
+
+4. **Validate all state-changing requests**: Ensure all POST, PUT, PATCH, and DELETE requests are protected.
+
+5. **Use SameSite cookies**: Set the SameSite attribute on cookies to provide additional CSRF protection.
+
+## Testing CSRF Protection
+
+When testing your API routes, make sure to include the CSRF token:
+
+```typescript
+// __tests__/api/posts.test.ts
+import { describe, it, expect } from 'vitest';
+import { generateCsrfToken } from '@/lib/csrf';
+
+describe('CSRF Protection', () => {
+  it('should reject requests without CSRF token', async () => {
+    const response = await fetch('/api/posts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ title: 'Test Post' }),
+    });
+    
+    expect(response.status).toBe(403);
+  });
+
+  it('should accept requests with valid CSRF token', async () => {
+    const csrfToken = generateCsrfToken();
+    
+    const response = await fetch('/api/posts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken,
+      },
+      body: JSON.stringify({ title: 'Test Post' }),
+    });
+    
+    expect(response.status).toBe(201);
+  });
+});
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Missing CSRF Token**: If you receive a 403 Forbidden error, ensure you're including the CSRF token in your request headers.
+
+2. **Invalid CSRF Token**: If you receive a 403 error about an invalid token, check that:
+   - The token is being generated correctly
+   - The token is being sent in the correct header
+   - The token hasn't expired
+
+3. **CORS Issues**: If you're making requests from a different origin, ensure your CORS configuration allows the CSRF token header.
+
+### Debugging Tips
+
+1. Check browser developer tools to verify the CSRF token is being sent in requests
+2. Verify the token is being stored correctly in cookies
+3. Check server logs for CSRF validation errors
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="API Development"
+  icon="terminal"
+  href="/development/api-development"
+>
+  Learn about building APIs in StackForge
+</Card>
+
+<Card
+  title="Security Best Practices"
+  icon="shield"
+  href="/security/nextjs-best-practices"
+>
+  Learn about security best practices for Next.js applications
+</Card>
+
+</CardGroup>

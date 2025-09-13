@@ -1,0 +1,75 @@
+---
+title: 'Data Fetching'
+description: 'Learn about data fetching patterns and best practices in StackForge'
+---
+
+# Data Fetching
+
+Data fetching is a critical aspect of any web application. This section covers patterns, best practices, and security considerations for fetching data in your StackForge application.
+
+## Overview
+
+StackForge provides several approaches for data fetching, each with its own use cases and benefits. This guide covers the different methods available and when to use them.
+
+## Data Fetching Methods
+
+<CardGroup cols={2}>
+
+<Card
+  title="CSRF Protection"
+  icon="shield"
+  href="/data-fetching/csrf-protection"
+>
+  Protect your API routes against CSRF attacks
+</Card>
+
+<Card
+  title="Server Components"
+  icon="server"
+  href="/development/api-development"
+>
+  Learn about React Server Components data fetching
+</Card>
+
+<Card
+  title="API Routes"
+  icon="terminal"
+  href="/development/api-development"
+>
+  Build and consume API endpoints
+</Card>
+
+<Card
+  title="Database Queries"
+  icon="database"
+  href="/development/database-management"
+>
+  Efficient database querying with Drizzle ORM
+</Card>
+
+</CardGroup>
+
+## Best Practices
+
+1. **Use Server Components** for data that doesn't change frequently
+2. **Implement proper error handling** for all data fetching operations
+3. **Cache appropriately** to improve performance
+4. **Validate all input data** to prevent injection attacks
+5. **Use streaming** for large datasets
+6. **Implement proper loading states** for better UX
+
+## Security Considerations
+
+- Always implement CSRF protection for state-changing operations
+- Validate and sanitize all input data
+- Implement proper authentication and authorization
+- Use parameterized queries to prevent SQL injection
+- Implement rate limiting for API endpoints
+
+## Performance Optimization
+
+- Use React's built-in caching mechanisms
+- Implement pagination for large datasets
+- Use selective data fetching to minimize payload size
+- Implement proper error boundaries
+- Use Suspense for loading states
