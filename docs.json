@@ -32,7 +32,8 @@
           {
             "group": "Configuration",
             "pages": [
-              "environment-variables"
+              "environment-variables",
+              "application-configuration"
             ]
           },
           {

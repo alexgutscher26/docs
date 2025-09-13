@@ -129,14 +129,15 @@ DATABASE_URL=postgresql://user:password@host:port/database
 
 StackForge includes Zod-based validation for environment variables to ensure all required variables are properly configured.
 
-To enable environment variable validation, add the following to your environment:
+You can validate your environment variables using the built-in validation script:
 
-```env
-# Environment Validation
-ENABLE_ENV_VALIDATION=true
+```bash
+bun run env:validate
 ```
 
-When enabled, the application will validate all required environment variables at startup and provide clear error messages if any are missing or invalid.
+This will check that all required environment variables are present and in the correct format, providing clear error messages if any are missing or invalid.
+
+The validation is also automatically run when the application starts to ensure all required environment variables are properly configured.
 
 ## Security Best Practices
 
@@ -190,7 +191,7 @@ To debug environment variables in development:
 <Card
   title="Deployment Guide"
   icon="cloud-arrow-up"
-  href="/c"
+  href="/deployment"
 >
   Deploy your StackForge application to production
 </Card>

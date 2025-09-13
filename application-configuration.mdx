@@ -1,0 +1,138 @@
+---
+title: 'Application Configuration'
+description: 'Configure your StackForge application with environment variables and validation'
+---
+
+# Application Configuration
+
+StackForge requires several environment variables to be configured for proper operation. This guide will walk you through setting up your application configuration and validating it before starting the server.
+
+## Required Environment Variables
+
+Before starting your StackForge application, you must configure the following environment variables in your `.env.local` file:
+
+```env
+# App Configuration
+NEXT_PUBLIC_APP_NAME=StackForge
+NEXT_PUBLIC_APP_DOMAIN=http://localhost:3000
+
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/stackforge
+
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_XXXXXXXXXXXXXXXXXXXXXXXX
+CLERK_SECRET_KEY=sk_test_XXXXXXXXXXXXXXXXXXXXXXXX
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/auth/signin
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/auth/signup
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_URL=/
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_URL=/
+```
+
+## Environment Variable Validation
+
+StackForge includes built-in Zod validation to ensure all required environment variables are properly configured. The validation runs automatically when you start the server, but you can also run it manually:
+
+```bash
+bun run env:validate
+```
+
+If any environment variables are missing or invalid, you'll receive a clear error message indicating what needs to be fixed.
+
+## Configuration Steps
+
+### 1. Create Environment File
+
+Create a `.env.local` file in the root directory of your project:
+
+```bash
+touch .env.local
+```
+
+### 2. Configure Variables
+
+Add the required environment variables to your `.env.local` file. Make sure to replace the placeholder values with your actual configuration:
+
+- **App Configuration**: Set your application name and domain
+- **Database**: Configure your PostgreSQL connection string
+- **Clerk Authentication**: Add your Clerk API keys and URLs
+
+### 3. Validate Configuration
+
+Validate your environment variables to ensure they are correctly configured:
+
+```bash
+bun run env:validate
+```
+
+### 4. Start the Server
+
+Once your environment variables are configured and validated, you can start the development server:
+
+```bash
+bun run dev
+```
+
+The server will automatically validate your environment variables on startup. If any variables are missing or invalid, the server will not start and will provide an error message.
+
+## Optional Environment Variables
+
+You can also configure these optional environment variables to enhance your application:
+
+```env
+# Email Service Configuration (optional)
+RESEND_API_KEY=your_resend_api_key
+
+# Analytics and Monitoring (optional)
+NEXT_PUBLIC_VERCEL_ANALYTICS_ID=your_vercel_analytics_id
+
+# Feature Flags (optional)
+NEXT_PUBLIC_ENABLE_DARK_MODE=true
+```
+
+## Security Best Practices
+
+When working with environment variables, follow these security best practices:
+
+1. **Never commit secrets to version control**: Always add `.env*` files to your `.gitignore`
+2. **Use different keys for different environments**: Never use production keys in development
+3. **Rotate keys regularly**: Update your API keys and secrets periodically
+4. **Limit permissions**: Ensure API keys have the minimum required permissions
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Missing Environment Variables**: Ensure all required variables are set in your environment
+2. **Invalid Database URL**: Verify your `DATABASE_URL` format and credentials
+3. **Clerk Authentication Errors**: Check your Clerk keys and domain settings
+
+### Debugging Environment Variables
+
+To debug environment variables in development:
+
+1. Check that your `.env.local` file exists and is properly formatted
+2. Verify that variable names match exactly (case-sensitive)
+3. Ensure there are no extra spaces or characters around the `=` sign
+4. Restart your development server after making changes
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Quickstart Guide"
+  icon="rocket"
+  href="/quickstart"
+>
+  Get your StackForge application up and running quickly
+</Card>
+
+<Card
+  title="Environment Variables"
+  icon="settings"
+  href="/environment-variables"
+>
+  Detailed information about all environment variables
+</Card>
+
+</CardGroup>

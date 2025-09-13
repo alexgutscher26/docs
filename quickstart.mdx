@@ -43,6 +43,15 @@ Set up your local development environment and start building your AI-powered soc
     You'll need to create accounts with [Clerk](https://clerk.dev/) and set up a PostgreSQL database to get the required keys and connection string.
 
   </Accordion>
+  <Accordion icon="check-circle" title="Validate environment variables">
+    Validate your environment variables to ensure they are correctly configured:
+    
+    ```bash
+    bun run env:validate
+    ```
+    
+    This will check that all required environment variables are present and in the correct format.
+  </Accordion>
 </AccordionGroup>
 
 ### Step 2: Initialize the database
