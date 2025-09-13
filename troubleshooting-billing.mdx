@@ -1,0 +1,307 @@
+---
+title: 'Troubleshooting Billing Issues'
+description: 'Troubleshoot common billing and subscription issues with StackForge'
+---
+
+# Troubleshooting Billing Issues
+
+This guide helps you resolve common issues that may occur with billing and subscription functionality in StackForge.
+
+## Overview
+
+StackForge is designed to integrate with payment providers like Stripe and Lemon Squeezy for handling subscriptions and billing. While the boilerplate includes placeholders for billing functionality, you'll need to implement the actual payment integration based on your chosen provider.
+
+## Cannot Create a Checkout Session
+
+This issue typically occurs when environment variables are not configured correctly or when plan IDs don't match between your application and payment provider.
+
+### Environment Variables
+
+Ensure you have set the following environment variables in your `.env.local` file:
+
+```env
+# Stripe Configuration (if using Stripe)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_XXXXXXXXXXXXXXXXXXXXXXXX
+STRIPE_SECRET_KEY=sk_test_XXXXXXXXXXXXXXXXXXXXXXXX
+STRIPE_WEBHOOK_SECRET=whsec_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+# Lemon Squeezy Configuration (if using Lemon Squeezy)
+LEMON_SQUEEZY_API_KEY=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+LEMON_SQUEEZY_STORE_ID=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+LEMON_SQUEEZY_WEBHOOK_SECRET=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+NEXT_PUBLIC_LEMON_SQUEEZY_STORE_URL=https://your-store.lemonsqueezy.com
+```
+
+### Plan IDs
+
+Make sure the plan IDs used in your application match exactly with those in your payment provider's dashboard:
+
+```ts
+// src/constants/plans.ts
+export const PLANS = [
+  {
+    id: 'free', // Must match the plan ID in your payment provider
+    name: 'Free',
+    price: 0,
+    // ... other plan details
+  },
+  {
+    id: 'pro', // Must match the plan ID in your payment provider
+    name: 'Pro',
+    price: 10,
+    // ... other plan details
+  },
+  {
+    id: 'enterprise', // Must match the plan ID in your payment provider
+    name: 'Enterprise',
+    price: 15,
+    // ... other plan details
+  }
+];
+```
+
+## Database Not Updated After Subscription
+
+This issue typically occurs when webhooks are not configured correctly. The database needs to be updated when a user subscribes to a plan, which is handled through webhooks from your payment provider.
+
+### Webhook Configuration
+
+Ensure you have set up the webhook in your payment provider's dashboard and that the URL is correct:
+
+#### Stripe Webhook Setup
+
+1. In your Stripe Dashboard, go to Developers > Webhooks
+2. Add a new endpoint with the URL: `https://yourdomain.com/api/webhooks/stripe`
+3. Select the following events:
+   - `checkout.session.completed`
+   - `invoice.payment_succeeded`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+
+#### Lemon Squeezy Webhook Setup
+
+1. In your Lemon Squeezy Dashboard, go to Settings > Webhooks
+2. Add a new endpoint with the URL: `https://yourdomain.com/api/webhooks/lemonsqueezy`
+3. Select the following events:
+   - `order_created`
+   - `subscription_created`
+   - `subscription_updated`
+   - `subscription_cancelled`
+
+### Webhook Validation
+
+Ensure your webhook handler properly validates incoming requests:
+
+```ts
+// src/app/api/webhooks/stripe/route.ts
+import { stripe } from '@/lib/stripe';
+import { headers } from 'next/headers';
+import { NextResponse } from 'next/server';
+
+export async function POST(req: Request) {
+  const body = await req.text();
+  const signature = headers().get('Stripe-Signature') as string;
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+  } catch (error) {
+    console.error('Webhook signature verification failed:', error);
+    return new NextResponse('Webhook Error', { status: 400 });
+  }
+
+  // Handle the event
+  switch (event.type) {
+    case 'checkout.session.completed':
+      // Update database with subscription information
+      break;
+    // ... other cases
+  }
+
+  return new NextResponse(null, { status: 200 });
+}
+```
+
+## Local Development Issues
+
+When working locally, additional configuration may be required for webhooks to work properly.
+
+### Stripe CLI for Local Development
+
+If using Stripe, you can use the Stripe CLI to forward webhooks to your local server:
+
+```bash
+# Install Stripe CLI
+# Follow instructions at https://stripe.com/docs/stripe-cli
+
+# Login to Stripe CLI
+stripe login
+
+# Forward webhooks to your local server
+stripe listen --forward-to localhost:3000/api/webhooks/stripe
+```
+
+### Lemon Squeezy Local Development
+
+If using Lemon Squeezy, you'll need to set up a proxy for local development:
+
+1. Use a tunneling service like ngrok:
+   ```bash
+   # Install ngrok
+   npm install -g ngrok
+   
+   # Start ngrok tunnel
+   ngrok http 3000
+   ```
+
+2. Update your Lemon Squeezy webhook URL to use the ngrok URL:
+   ```
+   https://your-ngrok-url.ngrok.io/api/webhooks/lemonsqueezy
+   ```
+
+## Production Deployment Issues
+
+When deploying to production, ensure the following:
+
+### Publicly Accessible Webhooks
+
+The webhook URLs must be publicly accessible. If your application is behind a firewall or VPN, webhooks will not be able to reach your server.
+
+### Environment Variables in Production
+
+Ensure all environment variables are properly set in your hosting provider's dashboard:
+
+- Vercel: Project Settings > Environment Variables
+- Other platforms: Check your platform's documentation for environment variable configuration
+
+### SSL Certificates
+
+Ensure your domain has a valid SSL certificate, as payment providers require HTTPS for webhooks.
+
+## Common Error Messages
+
+### "No such plan" or "Invalid plan ID"
+
+This error occurs when the plan ID in your application doesn't match the plan ID in your payment provider. Double-check that all plan IDs are exactly the same.
+
+### "Webhook signature verification failed"
+
+This error occurs when the webhook secret doesn't match between your application and payment provider. Ensure you've copied the correct webhook secret from your payment provider's dashboard.
+
+### "Invalid API key"
+
+This error occurs when your payment provider API key is incorrect or missing. Verify that you've set the correct API key in your environment variables.
+
+## Testing Billing Functionality
+
+### Test Mode vs Live Mode
+
+Most payment providers offer test mode for development. Ensure you're using test keys during development and live keys in production.
+
+### Test Cards
+
+Payment providers typically provide test card numbers for development:
+
+**Stripe Test Cards:**
+- `4242 4242 4242 4242` - Succeeds
+- `4000 0000 0000 0002` - Declines
+
+**Lemon Squeezy Test Mode:**
+- Enable test mode in your store settings
+- Use any email address ending with `@example.com`
+
+## Database Schema Issues
+
+Ensure your database schema includes the necessary tables for billing:
+
+```ts
+// src/db/schema/subscriptions.ts
+import { pgTable, serial, text, timestamp, integer, boolean } from 'drizzle-orm/pg-core';
+import { users } from './user';
+
+export const subscriptions = pgTable('subscriptions', {
+  id: serial('id').primaryKey(),
+  userId: text('user_id').references(() => users.id),
+  planId: text('plan_id').notNull(),
+  status: text('status').notNull(), // active, cancelled, past_due, etc.
+  currentPeriodStart: timestamp('current_period_start').notNull(),
+  currentPeriodEnd: timestamp('current_period_end').notNull(),
+  cancelAtPeriodEnd: boolean('cancel_at_period_end').default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+```
+
+## User Interface Issues
+
+### Billing Page Not Found
+
+If users are getting 404 errors when accessing the billing page, ensure you have created the billing page component:
+
+```tsx
+// src/app/(main)/dashboard/billing/page.tsx
+import { BillingForm } from '@/components/dashboard/billing-form';
+
+export default function BillingPage() {
+  return (
+    <div className="container py-8">
+      <h1 className="text-3xl font-bold mb-6">Billing</h1>
+      <BillingForm />
+    </div>
+  );
+}
+```
+
+### Subscription Status Not Updating
+
+If subscription status isn't updating in the UI, check:
+
+1. That your webhook is properly configured and receiving events
+2. That your database is being updated correctly in the webhook handler
+3. That your frontend is fetching the latest subscription data
+
+## Security Considerations
+
+### Protecting Webhook Endpoints
+
+Ensure your webhook endpoints are properly secured:
+
+```ts
+// Don't expose sensitive operations without verification
+export async function POST(req: Request) {
+  // Always verify webhook signatures
+  const verified = verifyWebhookSignature(req);
+  if (!verified) {
+    return new NextResponse('Unauthorized', { status: 401 });
+  }
+  
+  // Process verified webhook
+}
+```
+
+### Handling Sensitive Data
+
+Never log sensitive payment information and ensure sensitive environment variables are properly secured.
+
+## Getting Further Help
+
+If you're still experiencing issues after trying these solutions:
+
+1. Check your payment provider's documentation and dashboard for error messages
+2. Review your application logs for specific error messages
+3. Verify that all environment variables are correctly set
+4. Test your webhook endpoints using tools like Postman or curl
+5. Contact your payment provider's support team for assistance with their services
+
+When reaching out for support, please include:
+- The exact error message you're seeing
+- Relevant logs from your application
+- Information about your environment (local/production)
+- Steps you've already taken to troubleshoot
+
+For StackForge-specific support, contact our team at [support@stackforge.ai](mailto:support@stackforge.ai).

@@ -1,0 +1,350 @@
+---
+title: 'Troubleshooting Deployment Issues'
+description: 'Troubleshoot common deployment issues with StackForge'
+---
+
+# Troubleshooting Deployment Issues
+
+This guide helps you resolve common issues that may occur when deploying your StackForge application to production environments.
+
+## The Deployment Build Fails
+
+This is most likely an issue related to environment variables not being set correctly in the deployment environment. StackForge is very defensive about incorrect environment variables and will throw an error if any required environment variables are not set. This approach ensures that the build will fail if environment variables are not set correctly, instead of deploying a broken application.
+
+### Check Environment Variables
+
+Ensure all required environment variables are properly configured in your deployment platform:
+
+```env
+# App Configuration
+NEXT_PUBLIC_APP_NAME=YourAppName
+NEXT_PUBLIC_APP_DOMAIN=https://yourdomain.com
+
+# Database
+DATABASE_URL=postgresql://user:password@host:port/database
+
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_publishable_key
+CLERK_SECRET_KEY=your_secret_key
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/auth/signin
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/auth/signup
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_URL=/
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_URL=/
+```
+
+### Analyze Deployment Logs
+
+Check your deployment platform's logs for specific error messages:
+
+1. **Vercel**: Check the "Deployments" tab in your Vercel dashboard
+2. **Cloudflare Pages**: Check the "Deployments" tab in your Cloudflare dashboard
+3. **Fly.io**: Run `fly logs` to view application logs
+4. **Docker**: Check container logs with `docker logs container_name`
+
+## Environment Variable Issues
+
+### Missing Environment Variables
+
+If you see errors related to missing environment variables, ensure all required variables are set in your deployment platform's dashboard or configuration.
+
+### Incorrect Environment Variable Values
+
+Verify that all environment variable values are correct:
+
+- Database connection string format
+- Clerk API keys
+- Domain configurations
+- Third-party service keys
+
+### Environment Variable Validation
+
+StackForge includes environment variable validation that runs during the build process. If any required variables are missing or invalid, the build will fail with a descriptive error message.
+
+## Database Connection Issues
+
+### Database URL Format
+
+Ensure your `DATABASE_URL` follows the correct format:
+
+```env
+DATABASE_URL=postgresql://username:password@host:port/database_name
+```
+
+### Database Accessibility
+
+Verify that your database is accessible from your deployment platform:
+
+1. Check firewall settings
+2. Verify network access
+3. Confirm database credentials
+4. Test connection from your deployment environment
+
+### Database Migrations
+
+Ensure database migrations have been run successfully:
+
+```bash
+bun run db:migrate
+```
+
+If migrations fail during deployment, check:
+- Database connectivity
+- Migration file integrity
+- Sufficient database permissions
+
+## Build Process Issues
+
+### Dependency Installation Failures
+
+If dependencies fail to install during the build process:
+
+1. Check your `package.json` for syntax errors
+2. Verify all dependencies are correctly specified
+3. Ensure your deployment platform supports Bun (or configure npm/pnpm if needed)
+
+### TypeScript Compilation Errors
+
+If you encounter TypeScript errors during build:
+
+1. Run `bun run type-check` locally to identify issues
+2. Fix any type errors in your code
+3. Ensure all type imports use the `type` modifier when `verbatimModuleSyntax` is enabled
+
+### Memory Issues During Build
+
+If the build process runs out of memory:
+
+```bash
+# Increase Node.js memory limit
+NODE_OPTIONS="--max-old-space-size=4096" bun run build
+```
+
+For deployment platforms that don't support this configuration, consider:
+- Optimizing your code to reduce bundle size
+- Upgrading to a higher-tier deployment plan with more memory
+
+## Platform-Specific Issues
+
+### Vercel Deployment Issues
+
+#### Build Settings
+
+Ensure your Vercel project settings are correct:
+
+1. **Build Command**: `bun run build`
+2. **Output Directory**: `.next`
+3. **Install Command**: `bun install`
+
+#### Environment Variables in Vercel
+
+Add all required environment variables in the Vercel dashboard under **Settings > Environment Variables**.
+
+#### Vercel Region Issues
+
+If you're experiencing latency or connectivity issues, consider changing your Vercel region in the project settings.
+
+### Docker Deployment Issues
+
+#### Dockerfile Problems
+
+Ensure your Dockerfile is correctly configured:
+
+```dockerfile
+# Dockerfile
+FROM oven/bun:1 as base
+
+# Install dependencies
+WORKDIR /app
+COPY package.json bun.lock ./ 
+RUN bun install --production
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN bun run build
+
+# Production stage
+FROM oven/bun:1-deps as production
+
+WORKDIR /app
+
+# Copy built application
+COPY --from=base /app/.next ./.next
+COPY --from=base /app/node_modules ./node_modules
+COPY --from=base /app/package.json ./package.json
+
+# Expose port
+EXPOSE 3000
+
+# Start the application
+CMD ["bun", "run", "start"]
+```
+
+#### Container Runtime Issues
+
+If your container fails to start:
+
+1. Check container logs: `docker logs container_name`
+2. Verify all environment variables are set
+3. Ensure the correct port is exposed
+4. Confirm the start command is correct
+
+### Cloudflare Pages Issues
+
+#### Build Configuration
+
+Ensure your Cloudflare Pages build settings are correct:
+
+1. **Build command**: `bun run build`
+2. **Build output directory**: `.next`
+
+#### Environment Variables in Cloudflare
+
+Add all required environment variables in the Cloudflare dashboard under **Settings > Environment Variables**.
+
+### Fly.io Issues
+
+#### Fly Configuration
+
+Ensure your `fly.toml` file is correctly configured:
+
+```toml
+# fly.toml
+app = "your-app-name"
+kill_signal = "SIGINT"
+kill_timeout = 5
+processes = []
+
+[build]
+  builder = "dockerfile"
+
+[env]
+  PORT = "8080"
+
+[[services]]
+  http_checks = []
+  internal_port = 8080
+  processes = ["app"]
+  protocol = "tcp"
+  script_checks = []
+```
+
+#### Deployment Commands
+
+Use the correct Fly.io deployment commands:
+
+```bash
+# Deploy to Fly.io
+fly deploy
+
+# Set environment variables
+fly secrets set DATABASE_URL=your_database_url
+
+# View application logs
+fly logs
+```
+
+## Runtime Issues
+
+### Application Crashes on Startup
+
+If your application crashes immediately after deployment:
+
+1. Check application logs for error messages
+2. Verify all environment variables are correctly set
+3. Ensure database connections are working
+4. Confirm file permissions are correct
+
+### Performance Issues
+
+If your deployed application is slow:
+
+1. Check for memory leaks
+2. Optimize database queries
+3. Implement caching strategies
+4. Use a CDN for static assets
+5. Consider upgrading your deployment plan
+
+### SSL/TLS Issues
+
+If you're experiencing SSL/TLS issues:
+
+1. Verify your domain is correctly configured
+2. Check SSL certificate validity
+3. Ensure HTTPS redirects are properly configured
+4. Confirm your deployment platform's SSL settings
+
+## Common Error Messages
+
+### "Environment variable not found"
+
+This error indicates that a required environment variable is missing. Check your deployment platform's environment variable configuration.
+
+### "Database connection failed"
+
+This error indicates issues with your database connection. Verify:
+- Database URL format
+- Database credentials
+- Network connectivity
+- Firewall settings
+
+### "Module not found"
+
+This error indicates missing dependencies. Ensure:
+- All dependencies are listed in `package.json`
+- Dependencies are correctly installed
+- No typos in import statements
+
+### "Out of memory" or "Heap out of memory"
+
+This error indicates the build or runtime process ran out of memory. Solutions:
+- Optimize code to reduce memory usage
+- Increase memory allocation if possible
+- Upgrade to a higher-tier deployment plan
+
+## Post-Deployment Verification
+
+After resolving deployment issues, verify your application is working correctly:
+
+### Application Health Check
+
+- [ ] Application loads without errors
+- [ ] All pages are accessible
+- [ ] Authentication flows work correctly
+- [ ] Database connections are functioning
+- [ ] API endpoints respond correctly
+
+### Performance Verification
+
+- [ ] Page load times are acceptable
+- [ ] Database queries are optimized
+- [ ] Caching is working properly
+- [ ] CDN is serving static assets
+
+### Security Verification
+
+- [ ] HTTPS is enabled and working
+- [ ] Security headers are configured
+- [ ] Environment variables are properly secured
+- [ ] Authentication is functioning correctly
+
+## Getting Further Help
+
+If you're still experiencing issues after trying these solutions:
+
+1. Check your deployment platform's documentation for platform-specific issues
+2. Review the terminal output and logs for specific error messages
+3. Search the GitHub issues for similar problems
+4. Contact our support team at [support@stackforge.ai](mailto:support@stackforge.ai)
+
+When reaching out for support, please include:
+- The exact error message you're seeing
+- Your deployment platform and configuration
+- Relevant logs from your deployment process
+- Steps you've already taken to troubleshoot
+
+For platform-specific issues, also contact your deployment platform's support team:
+- **Vercel**: https://vercel.com/support
+- **Cloudflare Pages**: https://support.cloudflare.com/
+- **Fly.io**: https://fly.io/docs/getting-started/support/

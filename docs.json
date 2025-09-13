@@ -65,7 +65,10 @@
           {
             "group": "Help",
             "pages": [
-              "faq"
+              "faq",
+              "troubleshooting-installation",
+              "troubleshooting-billing",
+              "troubleshooting-deployment"
             ]
           }
          ]
