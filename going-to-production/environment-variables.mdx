@@ -180,13 +180,13 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),
   CLERK_SECRET_KEY: z.string().min(1),
-  
+
   // Optional variables with defaults
   NEXT_PUBLIC_ENABLE_DARK_MODE: z
     .string()
     .optional()
     .default('false')
-    .transform((val) => val === 'true'),
+    .transform(val => val === 'true'),
 });
 
 export const env = envSchema.parse(process.env);

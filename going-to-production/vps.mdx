@@ -130,7 +130,7 @@ services:
   app:
     build: .
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_APP_NAME=${NEXT_PUBLIC_APP_NAME}
@@ -150,8 +150,8 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - ./ssl:/etc/nginx/ssl
@@ -212,7 +212,7 @@ version: '3.8'
 services:
   app:
     # ... existing app configuration ...
-    
+
   db:
     image: postgres:15
     environment:
@@ -309,7 +309,7 @@ export async function GET() {
   try {
     // Simple database query to check connectivity
     await db.execute(sql`SELECT 1`);
-    
+
     return NextResponse.json({ status: 'ok', database: 'connected' });
   } catch (error) {
     return NextResponse.json(
@@ -435,16 +435,19 @@ export const getCachedPosts = unstable_cache(
 ### Debugging Steps
 
 1. **Check Docker Logs**:
+
    ```bash
    docker-compose logs app
    ```
 
 2. **Check Application Health**:
+
    ```bash
    curl http://localhost:3000/api/health
    ```
 
 3. **Verify Environment Variables**:
+
    ```bash
    docker-compose exec app env
    ```

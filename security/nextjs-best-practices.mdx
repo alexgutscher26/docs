@@ -32,9 +32,9 @@ async function ServerComponent() {
     apiKey: process.env.API_KEY,
     storeId: process.env.STORE_ID,
   };
-  
+
   const data = await fetchData(config);
-  
+
   // This passes sensitive data to the client
   return <ClientComponent data={data} config={config} />;
 }
@@ -54,7 +54,7 @@ const config = {
 export async function fetchData() {
   const data = await fetchDataFromExternalApi(config);
   const storeId = config.storeId;
-  
+
   // Only return non-sensitive data
   return { data, storeId };
 }
@@ -107,7 +107,7 @@ Next.js handles environment variables uniquely, distinguishing between server-on
 - Variables without the `NEXT_PUBLIC_` prefix are only available on the server
 - Variables with the `NEXT_PUBLIC_` prefix are available on both server and client
 
-**Client components can only access environment variables prefixed with NEXT_PUBLIC_:**
+**Client components can only access environment variables prefixed with NEXT*PUBLIC*:**
 
 ```tsx
 // ✅ This is available in client components
@@ -117,7 +117,7 @@ console.log(process.env.NEXT_PUBLIC_API_URL);
 console.log(process.env.SECRET_API_KEY);
 ```
 
-### Never use NEXT_PUBLIC_ variables for sensitive data
+### Never use NEXT*PUBLIC* variables for sensitive data
 
 Since `NEXT_PUBLIC_` variables are embedded in the JavaScript bundle sent to browsers, they should never contain sensitive information:
 
@@ -175,7 +175,7 @@ async function UserProfile({ userId }: { userId: string }) {
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
   });
-  
+
   return (
     <div>
       <h1>{user.name}</h1>
@@ -204,20 +204,17 @@ const postSchema = z.object({
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
+
     // Validate input
     const result = postSchema.safeParse(body);
-    
+
     if (!result.success) {
-      return NextResponse.json(
-        { error: 'Invalid input' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
     }
-    
+
     // Process validated data
     const { title, content } = result.data;
-    
+
     // ... rest of implementation
   } catch (error) {
     return NextResponse.json(
@@ -287,11 +284,7 @@ try {
   Learn about data validation techniques
 </Card>
 
-<Card
-  title="Content Security Policy"
-  icon="lock"
-  href="/security/csp"
->
+<Card title="Content Security Policy" icon="lock" href="/security/csp">
   Implement CSP for additional protection
 </Card>
 

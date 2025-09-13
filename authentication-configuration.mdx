@@ -149,7 +149,7 @@ const isAdminRoute = createRouteMatcher(['/admin(.*)']);
 
 export default clerkMiddleware((auth, req) => {
   const { userId, session } = auth();
-  
+
   // Protect admin routes
   if (isAdminRoute(req)) {
     // Check if user has admin role
@@ -158,7 +158,7 @@ export default clerkMiddleware((auth, req) => {
       return NextResponse.redirect(new URL('/unauthorized', req.url));
     }
   }
-  
+
   // ... rest of middleware logic
 });
 ```
@@ -173,11 +173,11 @@ import { useAuth } from '@clerk/nextjs';
 
 export default function UserProfile() {
   const { userId, sessionId, orgId } = useAuth();
-  
+
   if (!userId) {
     return <div>Please sign in</div>;
   }
-  
+
   return (
     <div>
       <p>User ID: {userId}</p>
@@ -217,11 +217,11 @@ export default function OrganizationSwitcher() {
   const { userMemberships } = useOrganizationList({
     infinite: true,
   });
-  
+
   return (
     <div>
       {organization && <p>Current organization: {organization.name}</p>}
-      {userMemberships?.data?.map((membership) => (
+      {userMemberships?.data?.map(membership => (
         <button key={membership.organization.id}>
           {membership.organization.name}
         </button>

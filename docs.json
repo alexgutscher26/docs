@@ -55,7 +55,7 @@
           },
           {
             "group": "Customization",
-            "pages":[
+            "pages": [
               "customization/index",
               "customization/branding",
               "customization/navigation",
@@ -85,12 +85,9 @@
           },
           {
             "group": "Data Fetching",
-            "pages": [
-              "data-fetching/index",
-              "data-fetching/csrf-protection"
-            ]
+            "pages": ["data-fetching/index", "data-fetching/csrf-protection"]
           }
-         ]
+        ]
       },
       {
         "dropdown": "Going to Production",
@@ -121,9 +118,7 @@
         "groups": [
           {
             "group": "API Reference",
-            "pages": [
-              "api-reference/introduction"
-            ]
+            "pages": ["api-reference/introduction"]
           }
         ]
       },
@@ -134,9 +129,7 @@
         "groups": [
           {
             "group": "Changelog",
-            "pages": [
-              "changelog"
-            ]
+            "pages": ["changelog"]
           }
         ]
       }
@@ -209,12 +202,6 @@
     "background": "/images/thumbnail/background.svg"
   },
   "contextual": {
-    "options": [
-      "copy",
-      "chatgpt",
-      "claude",
-      "cursor",
-      "vscode"
-    ]
+    "options": ["copy", "chatgpt", "claude", "cursor", "vscode"]
   }
 }

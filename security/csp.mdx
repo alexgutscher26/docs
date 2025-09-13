@@ -22,6 +22,7 @@ Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; 
 ```
 
 This policy would:
+
 - Allow resources to be loaded only from the same origin (`'self'`)
 - Allow inline scripts and styles (not recommended for production)
 
@@ -38,13 +39,13 @@ import { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const response = NextResponse.next();
-  
+
   // Add CSP header
   response.headers.set(
     'Content-Security-Policy',
     "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';"
   );
-  
+
   return response;
 }
 ```
@@ -72,15 +73,15 @@ export function middleware(request: NextRequest) {
 
 ### Common Directives
 
-| Directive | Purpose | Example |
-|----------|---------|---------|
-| `default-src` | Fallback for other directives | `'self'` |
-| `script-src` | Valid sources for JavaScript | `'self'`, `'unsafe-inline'` |
-| `style-src` | Valid sources for CSS | `'self'`, `'unsafe-inline'` |
-| `img-src` | Valid sources for images | `'self'`, `data:` |
-| `font-src` | Valid sources for fonts | `'self'` |
-| `connect-src` | Valid sources for AJAX, WebSocket | `'self'` |
-| `frame-ancestors` | Valid parents that can embed | `'none'` |
+| Directive         | Purpose                           | Example                     |
+| ----------------- | --------------------------------- | --------------------------- |
+| `default-src`     | Fallback for other directives     | `'self'`                    |
+| `script-src`      | Valid sources for JavaScript      | `'self'`, `'unsafe-inline'` |
+| `style-src`       | Valid sources for CSS             | `'self'`, `'unsafe-inline'` |
+| `img-src`         | Valid sources for images          | `'self'`, `data:`           |
+| `font-src`        | Valid sources for fonts           | `'self'`                    |
+| `connect-src`     | Valid sources for AJAX, WebSocket | `'self'`                    |
+| `frame-ancestors` | Valid parents that can embed      | `'none'`                    |
 
 ### Strict CSP Example
 
@@ -110,22 +111,22 @@ import { randomBytes } from 'crypto';
 
 export function middleware(request: NextRequest) {
   const response = NextResponse.next();
-  
+
   // Generate a nonce
   const nonce = randomBytes(16).toString('base64');
-  
+
   // Add nonce to headers
   response.headers.set('X-Nonce', nonce);
-  
+
   // Add CSP with nonce
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'nonce-${nonce}';
     style-src 'self' 'nonce-${nonce}';
   `.replace(/\n/g, ' ');
-  
+
   response.headers.set('Content-Security-Policy', cspHeader);
-  
+
   return response;
 }
 ```
@@ -143,20 +144,18 @@ export default function RootLayout({
 }) {
   const headersList = headers();
   const nonce = headersList.get('X-Nonce');
-  
+
   return (
     <html lang="en">
       <head>
-        <style nonce={nonce}>
-          {`body { margin: 0; }`}
-        </style>
+        <style nonce={nonce}>{`body { margin: 0; }`}</style>
       </head>
       <body>
         {children}
-        <script 
+        <script
           nonce={nonce}
           dangerouslySetInnerHTML={{
-            __html: `console.log('Hello World');`
+            __html: `console.log('Hello World');`,
           }}
         />
       </body>
@@ -214,13 +213,13 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   const report = await request.json();
-  
+
   // Log the violation
   console.warn('CSP Violation:', report);
-  
+
   // In production, you might want to send this to a logging service
   // or store it in a database for analysis
-  
+
   return NextResponse.json({ success: true });
 }
 ```
@@ -296,7 +295,7 @@ Regularly review your CSP policy and update it as your application changes:
 Automatically upgrade HTTP requests to HTTPS:
 
 ```ts
-const cspHeader = "upgrade-insecure-requests;";
+const cspHeader = 'upgrade-insecure-requests;';
 ```
 
 ## Troubleshooting
@@ -311,6 +310,7 @@ const cspHeader = "upgrade-insecure-requests;";
 ### Debugging Tips
 
 1. Use `report-only` mode to test without blocking:
+
    ```ts
    response.headers.set('Content-Security-Policy-Report-Only', cspHeader);
    ```

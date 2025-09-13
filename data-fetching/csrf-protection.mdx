@@ -43,22 +43,22 @@ import { useGetCsrfToken } from '@/hooks/use-csrf-token';
 
 function MyComponent() {
   const csrfToken = useGetCsrfToken();
-  
-  const handleSubmit = async (e) => {
+
+  const handleSubmit = async e => {
     e.preventDefault();
-    
+
     const response = await fetch('/api/posts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRF-Token': csrfToken,
       },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         title: 'My New Post',
-        content: 'This is the content of my post'
+        content: 'This is the content of my post',
       }),
     });
-    
+
     if (response.ok) {
       // Handle success
       console.log('Post created successfully');
@@ -90,10 +90,10 @@ import { verifyCsrfToken } from '@/lib/csrf';
 export async function POST(request: Request) {
   // The CSRF middleware will automatically validate the token
   // before this function is called
-  
+
   try {
     const body = await request.json();
-    
+
     // Process the request
     const newPost = {
       id: Math.random().toString(36).substring(7),
@@ -101,9 +101,9 @@ export async function POST(request: Request) {
       content: body.content,
       createdAt: new Date().toISOString(),
     };
-    
+
     // Save to database (in a real implementation)
-    
+
     return NextResponse.json(newPost, { status: 201 });
   } catch (error) {
     return NextResponse.json(
@@ -155,7 +155,7 @@ import { generateCsrfToken } from '@/lib/csrf';
 export async function GET() {
   try {
     const csrfToken = generateCsrfToken();
-    
+
     // Set the token as an HTTP-only cookie
     const response = NextResponse.json({ csrfToken });
     response.cookies.set('csrf-token', csrfToken, {
@@ -164,7 +164,7 @@ export async function GET() {
       sameSite: 'strict',
       maxAge: 60 * 60, // 1 hour
     });
-    
+
     return response;
   } catch (error) {
     return NextResponse.json(
@@ -229,13 +229,13 @@ describe('CSRF Protection', () => {
       },
       body: JSON.stringify({ title: 'Test Post' }),
     });
-    
+
     expect(response.status).toBe(403);
   });
 
   it('should accept requests with valid CSRF token', async () => {
     const csrfToken = generateCsrfToken();
-    
+
     const response = await fetch('/api/posts', {
       method: 'POST',
       headers: {
@@ -244,7 +244,7 @@ describe('CSRF Protection', () => {
       },
       body: JSON.stringify({ title: 'Test Post' }),
     });
-    
+
     expect(response.status).toBe(201);
   });
 });

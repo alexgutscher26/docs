@@ -74,22 +74,22 @@ const postSchema = z.object({
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
+
     // Validate input
     const result = postSchema.safeParse(body);
-    
+
     if (!result.success) {
       return NextResponse.json(
-        { 
+        {
           error: 'Invalid input',
           details: result.error.issues
         },
         { status: 400 }
       );
     }
-    
+
     const { title, content, published } = result.data;
-    
+
     // Process validated data
     const newPost = await db.insert(posts).values({
       title,
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
       published,
       userId: /* get from auth context */
     }).returning();
-    
+
     return NextResponse.json(newPost);
   } catch (error) {
     return NextResponse.json(
@@ -129,31 +129,32 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    
+
     // Validate input
     const result = updatePostSchema.safeParse(body);
-    
+
     if (!result.success) {
       return NextResponse.json(
-        { 
+        {
           error: 'Invalid input',
-          details: result.error.issues
+          details: result.error.issues,
         },
         { status: 400 }
       );
     }
-    
+
     // Only update provided fields
     const updateData = Object.fromEntries(
       Object.entries(result.data).filter(([_, value]) => value !== undefined)
     );
-    
+
     // Update database
-    const updatedPost = await db.update(posts)
+    const updatedPost = await db
+      .update(posts)
       .set(updateData)
       .where(eq(posts.id, parseInt(params.id)))
       .returning();
-    
+
     return NextResponse.json(updatedPost);
   } catch (error) {
     return NextResponse.json(
@@ -182,28 +183,22 @@ export async function GET(
   try {
     // Validate the ID parameter
     const result = postIdSchema.safeParse(params.id);
-    
+
     if (!result.success) {
-      return NextResponse.json(
-        { error: 'Invalid post ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid post ID' }, { status: 400 });
     }
-    
+
     const postId = result.data;
-    
+
     // Fetch post
     const post = await db.query.posts.findFirst({
       where: eq(posts.id, postId),
     });
-    
+
     if (!post) {
-      return NextResponse.json(
-        { error: 'Post not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
-    
+
     return NextResponse.json(post);
   } catch (error) {
     return NextResponse.json(
@@ -232,39 +227,39 @@ const querySchema = z.object({
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    
+
     // Extract and validate query parameters
     const queryParams = {
       page: searchParams.get('page'),
       limit: searchParams.get('limit'),
       status: searchParams.get('status'),
     };
-    
+
     const result = querySchema.safeParse(queryParams);
-    
+
     if (!result.success) {
       return NextResponse.json(
-        { 
+        {
           error: 'Invalid query parameters',
-          details: result.error.issues
+          details: result.error.issues,
         },
         { status: 400 }
       );
     }
-    
+
     const { page, limit, status } = result.data;
-    
+
     // Build query
     let query = db.select().from(posts);
-    
+
     if (status) {
       query = query.where(eq(posts.status, status));
     }
-    
+
     // Apply pagination
     const offset = (page - 1) * limit;
     const paginatedPosts = await query.limit(limit).offset(offset);
-    
+
     return NextResponse.json(paginatedPosts);
   } catch (error) {
     return NextResponse.json(
@@ -290,12 +285,12 @@ const themeSchema = z.enum(['light', 'dark']);
 export async function GET() {
   const cookieStore = await cookies();
   const themeCookie = cookieStore.get('theme')?.value;
-  
+
   // Validate cookie data
   const result = themeSchema.safeParse(themeCookie);
-  
+
   const theme = result.success ? result.data : 'light'; // Default value
-  
+
   return NextResponse.json({ theme });
 }
 ```
@@ -331,7 +326,7 @@ export function PostForm() {
       published: false,
     },
   });
-  
+
   const onSubmit = async (data: PostFormValues) => {
     try {
       const response = await fetch('/api/posts', {
@@ -341,49 +336,40 @@ export function PostForm() {
         },
         body: JSON.stringify(data),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to create post');
       }
-      
+
       // Handle success
     } catch (error) {
       // Handle error
     }
   };
-  
+
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div>
-        <input
-          {...register('title')}
-          placeholder="Title"
-        />
+        <input {...register('title')} placeholder="Title" />
         {errors.title && (
           <span className="text-red-500">{errors.title.message}</span>
         )}
       </div>
-      
+
       <div>
-        <textarea
-          {...register('content')}
-          placeholder="Content"
-        />
+        <textarea {...register('content')} placeholder="Content" />
         {errors.content && (
           <span className="text-red-500">{errors.content.message}</span>
         )}
       </div>
-      
+
       <div>
         <label>
-          <input
-            type="checkbox"
-            {...register('published')}
-          />
+          <input type="checkbox" {...register('published')} />
           Published
         </label>
       </div>
-      
+
       <button type="submit">Create Post</button>
     </form>
   );
@@ -412,7 +398,7 @@ export function validateEnv() {
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error('Environment validation failed:');
-      error.issues.forEach((issue) => {
+      error.issues.forEach(issue => {
         console.error(`  ${issue.path.join('.')}: ${issue.message}`);
       });
       process.exit(1);
@@ -434,10 +420,7 @@ const result = schema.safeParse(input);
 
 if (!result.success) {
   // Handle validation error
-  return NextResponse.json(
-    { error: 'Invalid input' },
-    { status: 400 }
-  );
+  return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
 }
 
 const validatedData = result.data;

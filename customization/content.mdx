@@ -207,9 +207,7 @@ export function Hero() {
   return (
     <section className="container">
       <div className="flex flex-col items-center text-center">
-        <h1 className="text-4xl font-bold">
-          Your Custom Heading Here
-        </h1>
+        <h1 className="text-4xl font-bold">Your Custom Heading Here</h1>
         <p className="mt-4 text-lg text-muted-foreground">
           Your custom description here...
         </p>
@@ -306,15 +304,15 @@ type HeroContent = {
 
 export function DynamicHero() {
   const [content, setContent] = useState<HeroContent | null>(null);
-  
+
   useEffect(() => {
     fetch('/api/content')
       .then(res => res.json())
       .then(data => setContent(data.hero));
   }, []);
-  
+
   if (!content) return <div>Loading...</div>;
-  
+
   return (
     <section className="container">
       <div className="flex flex-col items-center text-center">

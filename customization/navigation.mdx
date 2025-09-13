@@ -114,19 +114,19 @@ import { usePathname } from 'next/navigation';
 
 export function CustomNavigation() {
   const pathname = usePathname();
-  
+
   const links = [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/profile', label: 'Profile' },
     { href: '/settings', label: 'Settings' },
   ];
-  
+
   return (
     <nav>
       <ul>
-        {links.map((link) => (
+        {links.map(link => (
           <li key={link.href}>
-            <Link 
+            <Link
               href={link.href}
               className={pathname === link.href ? 'active' : ''}
             >
@@ -176,11 +176,15 @@ export const SIDEBAR_LINKS = [
     icon: ChartPieIcon,
   },
   // Only show billing link if feature is enabled
-  ...(isFeatureEnabled('billing') ? [{
-    href: '/dashboard/billing',
-    label: 'Billing',
-    icon: CreditCardIcon,
-  }] : []),
+  ...(isFeatureEnabled('billing')
+    ? [
+        {
+          href: '/dashboard/billing',
+          label: 'Billing',
+          icon: CreditCardIcon,
+        },
+      ]
+    : []),
 ];
 ```
 
@@ -203,7 +207,7 @@ import { usePathname } from 'next/navigation';
 
 export function MobileSidebar() {
   const pathname = usePathname();
-  
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -213,12 +217,14 @@ export function MobileSidebar() {
       </SheetTrigger>
       <SheetContent side="left">
         <nav className="flex flex-col gap-4">
-          {SIDEBAR_LINKS.map((link) => (
+          {SIDEBAR_LINKS.map(link => (
             <Link
               key={link.href}
               href={link.href}
               className={`flex items-center gap-2 px-2 py-1 rounded ${
-                pathname === link.href ? 'bg-primary text-primary-foreground' : ''
+                pathname === link.href
+                  ? 'bg-primary text-primary-foreground'
+                  : ''
               }`}
             >
               <link.icon className="h-4 w-4" />

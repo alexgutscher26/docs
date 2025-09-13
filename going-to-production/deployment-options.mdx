@@ -149,7 +149,7 @@ services:
   app:
     build: .
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - DATABASE_URL=postgresql://user:password@db:5432/stackforge
       - NEXT_PUBLIC_APP_NAME=StackForge
@@ -199,13 +199,13 @@ Deploy to a VPS for maximum control over your infrastructure.
 
 ## Platform Comparison
 
-| Platform | Pros | Cons | Best For |
-|----------|------|------|----------|
-| Vercel | Best performance, excellent DX, built-in analytics | Can be expensive at scale | Production apps, startups |
-| Cloudflare Pages | Cost-effective, good performance | Limited features compared to Vercel | Budget-conscious projects |
-| Docker | Maximum flexibility, portable | More complex setup | Enterprise deployments |
-| Sherpa.sh | Cost-effective, simple setup | Smaller ecosystem | Budget-conscious projects |
-| VPS | Maximum control, custom configuration | Requires infrastructure management | Enterprise deployments, custom requirements |
+| Platform         | Pros                                               | Cons                                | Best For                                    |
+| ---------------- | -------------------------------------------------- | ----------------------------------- | ------------------------------------------- |
+| Vercel           | Best performance, excellent DX, built-in analytics | Can be expensive at scale           | Production apps, startups                   |
+| Cloudflare Pages | Cost-effective, good performance                   | Limited features compared to Vercel | Budget-conscious projects                   |
+| Docker           | Maximum flexibility, portable                      | More complex setup                  | Enterprise deployments                      |
+| Sherpa.sh        | Cost-effective, simple setup                       | Smaller ecosystem                   | Budget-conscious projects                   |
+| VPS              | Maximum control, custom configuration              | Requires infrastructure management  | Enterprise deployments, custom requirements |
 
 ## Performance Considerations
 
@@ -359,18 +359,12 @@ import { NextResponse } from 'next/server';
 
 export function middleware(request: Request) {
   const url = new URL(request.url);
-  
+
   // Redirect HTTP to HTTPS in production
-  if (
-    process.env['NODE_ENV'] === 'production' &&
-    url.protocol === 'http:'
-  ) {
-    return NextResponse.redirect(
-      `https://${url.hostname}${url.pathname}`,
-      301
-    );
+  if (process.env['NODE_ENV'] === 'production' && url.protocol === 'http:') {
+    return NextResponse.redirect(`https://${url.hostname}${url.pathname}`, 301);
   }
-  
+
   return NextResponse.next();
 }
 ```

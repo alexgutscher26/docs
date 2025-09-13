@@ -25,7 +25,7 @@ const HeavyChartComponent = dynamic(
   () => import('@/components/dashboard/heavy-chart'),
   {
     loading: () => <p>Loading chart...</p>,
-    ssr: false // Disable SSR if the component is client-only
+    ssr: false, // Disable SSR if the component is client-only
   }
 );
 
@@ -76,6 +76,7 @@ module.exports = withBundleAnalyzer(nextConfig);
 ```
 
 Run with:
+
 ```bash
 ANALYZE=true bun run build
 ```
@@ -93,7 +94,7 @@ export default function LazyComponent() {
   const [Component, setComponent] = useState(null);
 
   useEffect(() => {
-    import('@/components/heavy-component').then((mod) => {
+    import('@/components/heavy-component').then(mod => {
       setComponent(() => mod.HeavyComponent);
     });
   }, []);
@@ -121,7 +122,7 @@ const users = await db
   .select({
     id: usersTable.id,
     name: usersTable.name,
-    email: usersTable.email
+    email: usersTable.email,
   })
   .from(usersTable);
 ```
@@ -134,7 +135,7 @@ Implement caching for expensive operations:
 // Using Next.js fetch cache
 async function getCachedData() {
   const res = await fetch('https://api.example.com/data', {
-    next: { revalidate: 3600 } // Revalidate every hour
+    next: { revalidate: 3600 }, // Revalidate every hour
   });
   return res.json();
 }
@@ -173,28 +174,31 @@ import { posts } from '@/db/schema';
 
 const createPostSchema = z.object({
   title: z.string().min(1).max(100),
-  content: z.string().min(1).max(1000)
+  content: z.string().min(1).max(1000),
 });
 
-export const createPost = action(createPostSchema, async ({ title, content }) => {
-  try {
-    const [post] = await db
-      .insert(posts)
-      .values({
-        title,
-        content,
-        createdAt: new Date()
-      })
-      .returning();
+export const createPost = action(
+  createPostSchema,
+  async ({ title, content }) => {
+    try {
+      const [post] = await db
+        .insert(posts)
+        .values({
+          title,
+          content,
+          createdAt: new Date(),
+        })
+        .returning();
 
-    // Revalidate relevant cache tags
-    revalidateTag('posts');
+      // Revalidate relevant cache tags
+      revalidateTag('posts');
 
-    return { success: true, post };
-  } catch (error) {
-    return { success: false, error: 'Failed to create post' };
+      return { success: true, post };
+    } catch (error) {
+      return { success: false, error: 'Failed to create post' };
+    }
   }
-});
+);
 ```
 
 ## Asset Optimization
@@ -231,12 +235,13 @@ Minimize CSS and remove unused styles:
 /* In tailwind.config.ts, configure content paths properly */
 
 module.exports = {
-  content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+  content:
+    [ './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
-  // ...
+    ],
+    // ...
+;
 }
 ```
 
@@ -348,11 +353,11 @@ Ensure all images use the Next.js Image component:
 <img src="/large-image.jpg" alt="Large image" />
 
 // ✅ Good - optimized
-<Image 
-  src="/large-image.jpg" 
-  alt="Large image" 
-  width={800} 
-  height={600} 
+<Image
+  src="/large-image.jpg"
+  alt="Large image"
+  width={800}
+  height={600}
 />
 ```
 
@@ -370,7 +375,7 @@ test('homepage should load within 2 seconds', async ({ page }) => {
   const startTime = Date.now();
   await page.goto('/');
   const loadTime = Date.now() - startTime;
-  
+
   expect(loadTime).toBeLessThan(2000);
 });
 ```
@@ -378,6 +383,7 @@ test('homepage should load within 2 seconds', async ({ page }) => {
 ### Manual Testing
 
 Regularly test your application:
+
 1. Test on different devices and network conditions
 2. Use Chrome DevTools Performance tab
 3. Monitor real user metrics (RUM)
@@ -386,11 +392,7 @@ Regularly test your application:
 
 <CardGroup cols={2}>
 
-<Card
-  title="Access Control"
-  icon="lock"
-  href="/development/access-control"
->
+<Card title="Access Control" icon="lock" href="/development/access-control">
   Learn about implementing roles and permissions
 </Card>
 

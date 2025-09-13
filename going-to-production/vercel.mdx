@@ -78,7 +78,17 @@ Next.js automatically optimizes images when deployed to Vercel:
 // src/components/global/optimized-image.tsx
 import Image from 'next/image';
 
-export function OptimizedImage({ src, alt, width, height }: { src: string; alt: string; width: number; height: number }) {
+export function OptimizedImage({
+  src,
+  alt,
+  width,
+  height,
+}: {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+}) {
   return (
     <Image
       src={src}

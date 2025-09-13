@@ -1,6 +1,6 @@
 ---
-title: "Updating the Codebase"
-description: "Guide to keeping your StackForge project up to date with the latest changes"
+title: 'Updating the Codebase'
+description: 'Guide to keeping your StackForge project up to date with the latest changes'
 ---
 
 # Updating the Codebase
@@ -8,13 +8,17 @@ description: "Guide to keeping your StackForge project up to date with the lates
 This guide explains how to keep your StackForge project up to date with the latest improvements, security patches, and feature additions. Regular updates ensure you benefit from performance improvements, bug fixes, and new functionality.
 
 <Note>
-  **Repository Access**: 
-  This documentation is part of the StackForge boilerplate. To access the full repository and receive updates, users must purchase a license. The public repository contains only a limited version for demonstration purposes. Licensed users gain access to the complete codebase, regular updates, and premium features.
+  **Repository Access**: This documentation is part of the StackForge
+  boilerplate. To access the full repository and receive updates, users must
+  purchase a license. The public repository contains only a limited version for
+  demonstration purposes. Licensed users gain access to the complete codebase,
+  regular updates, and premium features.
 </Note>
 
 ## Understanding StackForge Updates
 
 StackForge follows semantic versioning (SemVer) for releases:
+
 - **Major versions** (1.x.x): Breaking changes, significant new features
 - **Minor versions** (x.1.x): New features, backward-compatible
 - **Patch versions** (x.x.1): Bug fixes, security patches, minor improvements
@@ -37,6 +41,7 @@ git tag backup-before-update-$(date +%Y%m%d)
 ### 2. Review Release Notes
 
 Check the [GitHub releases page](https://github.com/Shreyas-29/StackForge-ai/releases) for:
+
 - Breaking changes
 - Migration guides
 - New features
@@ -45,6 +50,7 @@ Check the [GitHub releases page](https://github.com/Shreyas-29/StackForge-ai/rel
 ### 3. Check Custom Code
 
 Identify any custom modifications you've made to:
+
 - Configuration files
 - Component files
 - Database schema
@@ -54,8 +60,11 @@ Identify any custom modifications you've made to:
 ### 4. Verify License Status
 
 <Note>
-  **License Requirement**: 
-  Users must purchase a license key to use StackForge in production. During development, you can use the boilerplate without a license key, but you must purchase a license before deploying to production. Some updates may include features that require a valid license key to function.
+  **License Requirement**: Users must purchase a license key to use StackForge
+  in production. During development, you can use the boilerplate without a
+  license key, but you must purchase a license before deploying to production.
+  Some updates may include features that require a valid license key to
+  function.
 </Note>
 
 ## Updating Methods
@@ -127,6 +136,7 @@ Each major release includes migration guides in the release notes. Follow these 
 ### 2. Update Configuration Files
 
 Some updates may require changes to:
+
 - `next.config.mjs`
 - `tailwind.config.ts`
 - `tsconfig.json`
@@ -166,6 +176,7 @@ Check for any compilation errors or warnings in the console.
 ### 2. Test Core Functionality
 
 Verify that these key features still work:
+
 - Authentication (sign in, sign up, sign out)
 - Database operations (create, read, update, delete)
 - API routes
@@ -201,6 +212,7 @@ bun install
 ### TypeScript Errors
 
 If TypeScript errors appear after updates:
+
 1. Check for any breaking changes in the release notes
 2. Update your code to match new type requirements
 3. Clear TypeScript cache:
@@ -213,6 +225,7 @@ rm -rf .next
 ### Database Issues
 
 If database-related errors occur:
+
 1. Check if new migrations are required
 2. Verify your database connection string
 3. Ensure your database schema matches the code
@@ -237,10 +250,10 @@ Enable Dependabot to automatically create pull requests for dependency updates:
 ```yaml
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     open-pull-requests-limit: 10
 ```
 
@@ -279,6 +292,7 @@ For production environments, consider pinning critical dependencies to specific 
 ### 3. Monitor Security Advisories
 
 Subscribe to security advisories for your key dependencies:
+
 - Next.js
 - React
 - Clerk
@@ -294,6 +308,7 @@ Maintain a log of updates and changes made to your project for future reference.
 ### Immediate Updates
 
 Update immediately for:
+
 - Security patches
 - Critical bug fixes
 - Dependency vulnerabilities
@@ -301,6 +316,7 @@ Update immediately for:
 ### Scheduled Updates
 
 Plan updates for:
+
 - New feature releases
 - Performance improvements
 - Developer experience enhancements
@@ -308,6 +324,7 @@ Plan updates for:
 ### Major Version Updates
 
 For major version updates:
+
 - Review release notes thoroughly
 - Test in a separate branch
 - Update during planned maintenance windows

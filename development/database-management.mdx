@@ -45,17 +45,27 @@ Define database tables using Drizzle ORM schema:
 
 ```ts
 // src/db/schema/user.ts
-import { pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
 
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  name: text('name'),
-  email: text('email').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (table) => ({
-  emailIndex: uniqueIndex('email_idx').on(table.email),
-}));
+export const users = pgTable(
+  'users',
+  {
+    id: serial('id').primaryKey(),
+    name: text('name'),
+    email: text('email').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  table => ({
+    emailIndex: uniqueIndex('email_idx').on(table.email),
+  })
+);
 ```
 
 ### Relationships
@@ -173,16 +183,22 @@ import { db } from '@/db';
 import { users } from '@/db/schema';
 
 // Insert a single record
-const newUser = await db.insert(users).values({
-  name: 'John Doe',
-  email: 'john@example.com',
-}).returning();
+const newUser = await db
+  .insert(users)
+  .values({
+    name: 'John Doe',
+    email: 'john@example.com',
+  })
+  .returning();
 
 // Insert multiple records
-const newUsers = await db.insert(users).values([
-  { name: 'John Doe', email: 'john@example.com' },
-  { name: 'Jane Smith', email: 'jane@example.com' },
-]).returning();
+const newUsers = await db
+  .insert(users)
+  .values([
+    { name: 'John Doe', email: 'john@example.com' },
+    { name: 'Jane Smith', email: 'jane@example.com' },
+  ])
+  .returning();
 ```
 
 ### Updating Data
@@ -195,13 +211,15 @@ import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 // Update a single record
-const updatedUser = await db.update(users)
+const updatedUser = await db
+  .update(users)
   .set({ name: 'John Smith' })
   .where(eq(users.id, 1))
   .returning();
 
 // Update multiple records
-await db.update(users)
+await db
+  .update(users)
   .set({ updatedAt: new Date() })
   .where(eq(users.active, true));
 ```
@@ -235,23 +253,41 @@ import { users, posts } from '@/db/schema';
 
 async function seed() {
   // Insert sample users
-  const sampleUsers = await db.insert(users).values([
-    { name: 'Alice Johnson', email: 'alice@example.com' },
-    { name: 'Bob Smith', email: 'bob@example.com' },
-    { name: 'Carol Davis', email: 'carol@example.com' },
-  ]).returning();
-  
+  const sampleUsers = await db
+    .insert(users)
+    .values([
+      { name: 'Alice Johnson', email: 'alice@example.com' },
+      { name: 'Bob Smith', email: 'bob@example.com' },
+      { name: 'Carol Davis', email: 'carol@example.com' },
+    ])
+    .returning();
+
   // Insert sample posts
-  const samplePosts = await db.insert(posts).values([
-    { title: 'First Post', content: 'This is the first post', userId: sampleUsers[0].id },
-    { title: 'Second Post', content: 'This is the second post', userId: sampleUsers[1].id },
-    { title: 'Third Post', content: 'This is the third post', userId: sampleUsers[2].id },
-  ]).returning();
-  
+  const samplePosts = await db
+    .insert(posts)
+    .values([
+      {
+        title: 'First Post',
+        content: 'This is the first post',
+        userId: sampleUsers[0].id,
+      },
+      {
+        title: 'Second Post',
+        content: 'This is the second post',
+        userId: sampleUsers[1].id,
+      },
+      {
+        title: 'Third Post',
+        content: 'This is the third post',
+        userId: sampleUsers[2].id,
+      },
+    ])
+    .returning();
+
   console.log('Seed data inserted successfully');
 }
 
-seed().catch((error) => {
+seed().catch(error => {
   console.error('Error seeding database:', error);
   process.exit(1);
 });
@@ -369,11 +405,13 @@ export const db = drizzle(client, { schema });
 ### Migration Troubleshooting
 
 1. **Rollback failed migrations**:
+
    ```bash
    bun run db:migrate:down
    ```
 
 2. **Reset database** (development only):
+
    ```bash
    bun run db:reset
    ```
@@ -393,21 +431,24 @@ Use transactions for atomic operations:
 import { db } from '@/db';
 import { users, posts } from '@/db/schema';
 
-await db.transaction(async (tx) => {
+await db.transaction(async tx => {
   try {
     // Create user
-    const newUser = await tx.insert(users).values({
-      name: 'John Doe',
-      email: 'john@example.com',
-    }).returning();
-    
+    const newUser = await tx
+      .insert(users)
+      .values({
+        name: 'John Doe',
+        email: 'john@example.com',
+      })
+      .returning();
+
     // Create post for user
     await tx.insert(posts).values({
       title: 'Welcome Post',
       content: 'Welcome to our platform!',
       userId: newUser[0].id,
     });
-    
+
     // Commit transaction
   } catch (error) {
     // Rollback transaction
@@ -449,19 +490,11 @@ const complexQuery = await db.execute(sql`
 
 <CardGroup cols={2}>
 
-<Card
-  title="Testing"
-  icon="test-tube"
-  href="/development/testing"
->
+<Card title="Testing" icon="test-tube" href="/development/testing">
   Learn how to write and run tests for your application
 </Card>
 
-<Card
-  title="Debugging"
-  icon="bug"
-  href="/development/debugging"
->
+<Card title="Debugging" icon="bug" href="/development/debugging">
   Learn how to troubleshoot common development issues
 </Card>
 

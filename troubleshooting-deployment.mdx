@@ -88,6 +88,7 @@ bun run db:migrate
 ```
 
 If migrations fail during deployment, check:
+
 - Database connectivity
 - Migration file integrity
 - Sufficient database permissions
@@ -120,6 +121,7 @@ NODE_OPTIONS="--max-old-space-size=4096" bun run build
 ```
 
 For deployment platforms that don't support this configuration, consider:
+
 - Optimizing your code to reduce bundle size
 - Upgrading to a higher-tier deployment plan with more memory
 
@@ -155,7 +157,7 @@ FROM oven/bun:1 as base
 
 # Install dependencies
 WORKDIR /app
-COPY package.json bun.lock ./ 
+COPY package.json bun.lock ./
 RUN bun install --production
 
 # Copy source code
@@ -284,6 +286,7 @@ This error indicates that a required environment variable is missing. Check your
 ### "Database connection failed"
 
 This error indicates issues with your database connection. Verify:
+
 - Database URL format
 - Database credentials
 - Network connectivity
@@ -292,6 +295,7 @@ This error indicates issues with your database connection. Verify:
 ### "Module not found"
 
 This error indicates missing dependencies. Ensure:
+
 - All dependencies are listed in `package.json`
 - Dependencies are correctly installed
 - No typos in import statements
@@ -299,6 +303,7 @@ This error indicates missing dependencies. Ensure:
 ### "Out of memory" or "Heap out of memory"
 
 This error indicates the build or runtime process ran out of memory. Solutions:
+
 - Optimize code to reduce memory usage
 - Increase memory allocation if possible
 - Upgrade to a higher-tier deployment plan
@@ -339,12 +344,14 @@ If you're still experiencing issues after trying these solutions:
 4. Contact our support team at [support@stackforge.ai](mailto:support@stackforge.ai)
 
 When reaching out for support, please include:
+
 - The exact error message you're seeing
 - Your deployment platform and configuration
 - Relevant logs from your deployment process
 - Steps you've already taken to troubleshoot
 
 For platform-specific issues, also contact your deployment platform's support team:
+
 - **Vercel**: https://vercel.com/support
 - **Cloudflare Pages**: https://support.cloudflare.com/
 - **Fly.io**: https://fly.io/docs/getting-started/support/

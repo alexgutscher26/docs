@@ -74,9 +74,9 @@ describe('Button', () => {
   it('calls onClick when clicked', async () => {
     const user = userEvent.setup();
     const onClick = jest.fn();
-    
+
     render(<Button onClick={onClick}>Click me</Button>);
-    
+
     await user.click(screen.getByText('Click me'));
     expect(onClick).toHaveBeenCalledTimes(1);
   });
@@ -105,21 +105,21 @@ describe('useCounter', () => {
 
   it('should increment count', () => {
     const { result } = renderHook(() => useCounter());
-    
+
     act(() => {
       result.current.increment();
     });
-    
+
     expect(result.current.count).toBe(1);
   });
 
   it('should decrement count', () => {
     const { result } = renderHook(() => useCounter(5));
-    
+
     act(() => {
       result.current.decrement();
     });
-    
+
     expect(result.current.count).toBe(4);
   });
 });
@@ -141,9 +141,11 @@ jest.mock('@/db', () => ({
   db: {
     query: {
       posts: {
-        findMany: jest.fn().mockResolvedValue([
-          { id: 1, title: 'Test Post', content: 'Test content' },
-        ]),
+        findMany: jest
+          .fn()
+          .mockResolvedValue([
+            { id: 1, title: 'Test Post', content: 'Test content' },
+          ]),
         findFirst: jest.fn().mockResolvedValue({
           id: 1,
           title: 'Test Post',
@@ -153,11 +155,13 @@ jest.mock('@/db', () => ({
     },
     insert: jest.fn().mockReturnValue({
       values: jest.fn().mockReturnValue({
-        returning: jest.fn().mockResolvedValue([{
-          id: 1,
-          title: 'New Post',
-          content: 'New content',
-        }]),
+        returning: jest.fn().mockResolvedValue([
+          {
+            id: 1,
+            title: 'New Post',
+            content: 'New content',
+          },
+        ]),
       }),
     }),
   },
@@ -203,10 +207,13 @@ describe('User schema', () => {
   });
 
   it('should insert a new user', async () => {
-    const newUser = await db.insert(users).values({
-      name: 'Test User',
-      email: 'test@example.com',
-    }).returning();
+    const newUser = await db
+      .insert(users)
+      .values({
+        name: 'Test User',
+        email: 'test@example.com',
+      })
+      .returning();
 
     expect(newUser[0].name).toBe('Test User');
     expect(newUser[0].email).toBe('test@example.com');
@@ -260,22 +267,22 @@ import { test, expect } from '@playwright/test';
 
 test('should allow user to sign up', async ({ page }) => {
   await page.goto('/auth/signup');
-  
+
   await page.fill('input[name="email"]', 'test@example.com');
   await page.fill('input[name="password"]', 'password123');
   await page.click('button[type="submit"]');
-  
+
   await expect(page).toHaveURL('/dashboard');
   await expect(page.getByText('Welcome to your dashboard')).toBeVisible();
 });
 
 test('should allow user to sign in', async ({ page }) => {
   await page.goto('/auth/signin');
-  
+
   await page.fill('input[name="email"]', 'test@example.com');
   await page.fill('input[name="password"]', 'password123');
   await page.click('button[type="submit"]');
-  
+
   await expect(page).toHaveURL('/dashboard');
 });
 ```
@@ -294,16 +301,16 @@ test('should allow user to create a post', async ({ page }) => {
   await page.fill('input[name="email"]', 'test@example.com');
   await page.fill('input[name="password"]', 'password123');
   await page.click('button[type="submit"]');
-  
+
   // Navigate to posts page
   await page.click('a[href="/dashboard/posts"]');
-  
+
   // Create new post
   await page.click('button:has-text("Create Post")');
   await page.fill('input[name="title"]', 'Test Post');
   await page.fill('textarea[name="content"]', 'This is a test post');
   await page.click('button[type="submit"]');
-  
+
   // Verify post was created
   await expect(page.getByText('Test Post')).toBeVisible();
 });
@@ -323,12 +330,9 @@ import { AnalyticsCard } from '@/components/dashboard/analytics-card';
 describe('AnalyticsCard', () => {
   it('should match snapshot', () => {
     const { container } = render(
-      <AnalyticsCard
-        title="Engagement"
-        data={[{ name: 'Jan', value: 100 }]}
-      />
+      <AnalyticsCard title="Engagement" data={[{ name: 'Jan', value: 100 }]} />
     );
-    
+
     expect(container).toMatchSnapshot();
   });
 });
@@ -511,11 +515,7 @@ open coverage/lcov-report/index.html
 
 <CardGroup cols={2}>
 
-<Card
-  title="Debugging"
-  icon="bug"
-  href="/development/debugging"
->
+<Card title="Debugging" icon="bug" href="/development/debugging">
   Learn how to troubleshoot common development issues
 </Card>
 

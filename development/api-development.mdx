@@ -54,13 +54,16 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
-    const newPost = await db.insert(posts).values({
-      title: body.title,
-      content: body.content,
-      userId: body.userId,
-    }).returning();
-    
+
+    const newPost = await db
+      .insert(posts)
+      .values({
+        title: body.title,
+        content: body.content,
+        userId: body.userId,
+      })
+      .returning();
+
     return NextResponse.json(newPost[0], { status: 201 });
   } catch (error) {
     return NextResponse.json(
@@ -111,22 +114,16 @@ interface Params {
   id: string;
 }
 
-export async function GET(
-  request: Request,
-  { params }: { params: Params }
-) {
+export async function GET(request: Request, { params }: { params: Params }) {
   try {
     const post = await db.query.posts.findFirst({
-      where: eq(posts.id, parseInt(params.id))
+      where: eq(posts.id, parseInt(params.id)),
     });
-    
+
     if (!post) {
-      return NextResponse.json(
-        { error: 'Post not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
-    
+
     return NextResponse.json(post);
   } catch (error) {
     return NextResponse.json(
@@ -147,24 +144,21 @@ Parse JSON data from requests:
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
+
     // Validate the request body
     const { title, content, userId } = body;
-    
+
     if (!title || !content || !userId) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
-    
+
     // Process the data
     // ...
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Invalid JSON' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 }
 ```
@@ -179,12 +173,12 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit');
     const offset = searchParams.get('offset');
-    
+
     const posts = await db.query.posts.findMany({
       limit: limit ? parseInt(limit) : 10,
       offset: offset ? parseInt(offset) : 0,
     });
-    
+
     return NextResponse.json(posts);
   } catch (error) {
     return NextResponse.json(
@@ -209,10 +203,7 @@ return NextResponse.json(
 );
 
 // Error response
-return NextResponse.json(
-  { error: 'Post not found' },
-  { status: 404 }
-);
+return NextResponse.json({ error: 'Post not found' }, { status: 404 });
 ```
 
 ### Custom Headers
@@ -253,14 +244,18 @@ const postWithAuthor = await db.query.posts.findFirst({
 });
 
 // Insert records
-const newPost = await db.insert(posts).values({
-  title: 'New Post',
-  content: 'Post content',
-  userId: 1,
-}).returning();
+const newPost = await db
+  .insert(posts)
+  .values({
+    title: 'New Post',
+    content: 'Post content',
+    userId: 1,
+  })
+  .returning();
 
 // Update records
-const updatedPost = await db.update(posts)
+const updatedPost = await db
+  .update(posts)
   .set({ title: 'Updated Title' })
   .where(eq(posts.id, postId))
   .returning();
@@ -277,13 +272,16 @@ Handle database errors appropriately:
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
-    const newPost = await db.insert(posts).values({
-      title: body.title,
-      content: body.content,
-      userId: body.userId,
-    }).returning();
-    
+
+    const newPost = await db
+      .insert(posts)
+      .values({
+        title: body.title,
+        content: body.content,
+        userId: body.userId,
+      })
+      .returning();
+
     return NextResponse.json(newPost[0], { status: 201 });
   } catch (error: any) {
     if (error.code === '23505') {
@@ -293,7 +291,7 @@ export async function POST(request: Request) {
         { status: 409 }
       );
     }
-    
+
     return NextResponse.json(
       { error: 'Failed to create post' },
       { status: 500 }
@@ -313,14 +311,11 @@ import { auth } from '@clerk/nextjs/server';
 
 export async function POST(request: Request) {
   const { userId } = auth();
-  
+
   if (!userId) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  
+
   // Continue with authenticated logic
   // ...
 }
@@ -338,24 +333,18 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const { userId, sessionClaims } = auth();
-  
+
   if (!userId) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  
+
   // Check if user has admin role
   const isAdmin = (sessionClaims?.metadata as any)?.role === 'admin';
-  
+
   if (!isAdmin) {
-    return NextResponse.json(
-      { error: 'Forbidden' },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
-  
+
   // Continue with admin-only logic
   // ...
 }
@@ -379,10 +368,10 @@ const PostSchema = z.object({
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
+
     // Validate the request body
     const validatedData = PostSchema.parse(body);
-    
+
     // Process validated data
     // ...
   } catch (error) {
@@ -392,7 +381,7 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    
+
     return NextResponse.json(
       { error: 'Failed to create post' },
       { status: 500 }
@@ -463,10 +452,10 @@ describe('POST /api/posts', () => {
         userId: 1,
       }),
     });
-    
+
     const response = await POST(request);
     const data = await response.json();
-    
+
     expect(response.status).toBe(201);
     expect(data.title).toBe('Test Post');
   });
@@ -526,16 +515,13 @@ const ratelimit = new Ratelimit({
 
 export async function GET(request: Request) {
   const ip = request.headers.get('x-forwarded-for') ?? '127.0.0.1';
-  
+
   const { success } = await ratelimit.limit(ip);
-  
+
   if (!success) {
-    return NextResponse.json(
-      { error: 'Too many requests' },
-      { status: 429 }
-    );
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
-  
+
   // Continue with API logic
   // ...
 }
@@ -552,11 +538,11 @@ import sanitizeHtml from 'sanitize-html';
 
 export async function POST(request: Request) {
   const body = await request.json();
-  
+
   // Sanitize user input
   const sanitizedTitle = sanitizeHtml(body.title);
   const sanitizedContent = sanitizeHtml(body.content);
-  
+
   // Use sanitized data
   // ...
 }
@@ -569,11 +555,17 @@ Configure CORS headers for API routes:
 ```ts
 export async function GET() {
   const response = NextResponse.json(data);
-  
+
   response.headers.set('Access-Control-Allow-Origin', '*');
-  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
+  response.headers.set(
+    'Access-Control-Allow-Methods',
+    'GET, POST, PUT, DELETE'
+  );
+  response.headers.set(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization'
+  );
+
   return response;
 }
 ```
@@ -590,17 +582,17 @@ import { logger } from '@/lib/logger';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
+
     logger.info('Creating new post', { title: body.title });
-    
+
     const newPost = await db.insert(posts).values(body).returning();
-    
+
     logger.info('Post created successfully', { postId: newPost[0].id });
-    
+
     return NextResponse.json(newPost[0], { status: 201 });
   } catch (error) {
     logger.error('Failed to create post', { error });
-    
+
     return NextResponse.json(
       { error: 'Failed to create post' },
       { status: 500 }
@@ -621,7 +613,7 @@ export async function POST(request: Request) {
     // API logic
   } catch (error) {
     Sentry.captureException(error);
-    
+
     return NextResponse.json(
       { error: 'Failed to create post' },
       { status: 500 }
@@ -684,11 +676,7 @@ export async function POST(request: Request) {
   Learn how to work with the database schema and migrations
 </Card>
 
-<Card
-  title="Testing"
-  icon="test-tube"
-  href="/development/testing"
->
+<Card title="Testing" icon="test-tube" href="/development/testing">
   Learn how to write and run tests for your application
 </Card>
 

@@ -44,19 +44,21 @@ Use constants for easily editable content:
 export const FEATURES = [
   {
     title: 'AI-Powered Content Creation',
-    description: 'Generate engaging social media content with our advanced AI algorithms.',
-    icon: '🤖'
+    description:
+      'Generate engaging social media content with our advanced AI algorithms.',
+    icon: '🤖',
   },
   {
     title: 'Multi-Platform Publishing',
-    description: 'Publish to all major social media platforms with a single click.',
-    icon: '📱'
+    description:
+      'Publish to all major social media platforms with a single click.',
+    icon: '📱',
   },
   {
     title: 'Analytics Dashboard',
     description: 'Track performance and optimize your social media strategy.',
-    icon: '📊'
-  }
+    icon: '📊',
+  },
 ];
 ```
 
@@ -125,7 +127,7 @@ export default async function BlogPage() {
     <div className="container py-12">
       <h1 className="text-4xl font-bold text-center mb-8">Blog</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {posts.map((post) => (
+        {posts.map(post => (
           <BlogPostCard key={post.id} post={post} />
         ))}
       </div>
@@ -145,7 +147,11 @@ import { blogPosts } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 
-export default async function BlogPostPage({ params }: { params: { slug: string } }) {
+export default async function BlogPostPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
   const post = await db
     .select()
     .from(blogPosts)
@@ -205,16 +211,10 @@ export default function ContentManagementPage() {
       <h1 className="text-3xl font-bold mb-6">Content Management</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <ContentEditor 
-            post={selectedPost} 
-            onSave={fetchContent}
-          />
+          <ContentEditor post={selectedPost} onSave={fetchContent} />
         </div>
         <div>
-          <ContentList 
-            posts={posts} 
-            onSelect={setSelectedPost}
-          />
+          <ContentList posts={posts} onSelect={setSelectedPost} />
         </div>
       </div>
     </div>
@@ -227,11 +227,12 @@ export default function ContentManagementPage() {
 For simpler content management, use MDX files:
 
 ```mdx
-// src/content/blog/first-post.mdx
----
+## // src/content/blog/first-post.mdx
+
 title: 'Getting Started with StackForge'
 date: '2023-01-01'
 author: 'John Doe'
+
 ---
 
 # Getting Started with StackForge
@@ -269,7 +270,11 @@ Implement an image management system:
 import { useState } from 'react';
 import { uploadImage } from '@/lib/image-upload';
 
-export function ImageUploader({ onUpload }: { onUpload: (url: string) => void }) {
+export function ImageUploader({
+  onUpload,
+}: {
+  onUpload: (url: string) => void;
+}) {
   const [uploading, setUploading] = useState(false);
 
   async function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
@@ -298,11 +303,7 @@ export function ImageUploader({ onUpload }: { onUpload: (url: string) => void })
         id="image-upload"
       />
       <label htmlFor="image-upload" className="cursor-pointer">
-        {uploading ? (
-          <p>Uploading...</p>
-        ) : (
-          <p>Click to upload an image</p>
-        )}
+        {uploading ? <p>Uploading...</p> : <p>Click to upload an image</p>}
       </label>
     </div>
   );
@@ -322,7 +323,7 @@ export async function uploadImage(file: File): Promise<string> {
 
   const response = await fetch('/api/upload', {
     method: 'POST',
-    body: formData
+    body: formData,
   });
 
   const result = await response.json();
@@ -342,7 +343,14 @@ Implement a draft/publish system:
 
 ```ts
 // src/db/schema/content-versions.ts
-import { pgTable, serial, integer, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  serial,
+  integer,
+  text,
+  timestamp,
+  boolean,
+} from 'drizzle-orm/pg-core';
 
 export const contentVersions = pgTable('content_versions', {
   id: serial('id').primaryKey(),
@@ -382,7 +390,7 @@ export function ContentHistory({ contentId }: { contentId: number }) {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">Content History</h3>
-      {versions.map((version) => (
+      {versions.map(version => (
         <div key={version.id} className="border rounded p-4">
           <div className="flex justify-between items-center">
             <span>Version {version.version}</span>
@@ -391,7 +399,7 @@ export function ContentHistory({ contentId }: { contentId: number }) {
             </span>
           </div>
           <div className="mt-2">
-            <button 
+            <button
               onClick={() => restoreVersion(version.id)}
               className="text-sm text-blue-600 hover:underline"
             >
@@ -418,14 +426,14 @@ export const translations = {
     'nav.home': 'Home',
     'nav.features': 'Features',
     'nav.pricing': 'Pricing',
-    'hero.title': 'AI-Powered Social Media Marketing'
+    'hero.title': 'AI-Powered Social Media Marketing',
   },
   es: {
     'nav.home': 'Inicio',
     'nav.features': 'Características',
     'nav.pricing': 'Precios',
-    'hero.title': 'Marketing en Redes Sociales Impulsado por IA'
-  }
+    'hero.title': 'Marketing en Redes Sociales Impulsado por IA',
+  },
 };
 
 export function t(key: string, locale: string = 'en'): string {
@@ -450,14 +458,15 @@ export function LanguageSwitcher() {
 
   const switchLanguage = (newLocale: string) => {
     // Replace locale in path
-    const newPath = pathname.replace(/^\/[a-z]{2}/, `/${newLocale}`) || `/${newLocale}`;
+    const newPath =
+      pathname.replace(/^\/[a-z]{2}/, `/${newLocale}`) || `/${newLocale}`;
     router.push(newPath);
   };
 
   return (
-    <select 
-      value={currentLocale} 
-      onChange={(e) => switchLanguage(e.target.value)}
+    <select
+      value={currentLocale}
+      onChange={e => switchLanguage(e.target.value)}
       className="bg-transparent border rounded p-2"
     >
       <option value="en">English</option>
@@ -481,15 +490,31 @@ import sanitizeHtml from 'sanitize-html';
 export function sanitizeContent(content: string): string {
   return sanitizeHtml(content, {
     allowedTags: [
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'p', 'br', 'strong', 'em', 'u', 'ol', 'ul', 'li',
-      'a', 'img', 'blockquote', 'code', 'pre'
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+      'p',
+      'br',
+      'strong',
+      'em',
+      'u',
+      'ol',
+      'ul',
+      'li',
+      'a',
+      'img',
+      'blockquote',
+      'code',
+      'pre',
     ],
     allowedAttributes: {
       a: ['href', 'target'],
-      img: ['src', 'alt', 'width', 'height']
+      img: ['src', 'alt', 'width', 'height'],
     },
-    allowedSchemes: ['http', 'https', 'mailto']
+    allowedSchemes: ['http', 'https', 'mailto'],
   });
 }
 ```
@@ -583,7 +608,7 @@ describe('Blog Post Page', () => {
   test('renders blog post content', async () => {
     const params = { slug: 'test-post' };
     render(await BlogPostPage({ params }));
-    
+
     expect(screen.getByText('Test Post Title')).toBeInTheDocument();
     expect(screen.getByText('Test post content')).toBeInTheDocument();
   });

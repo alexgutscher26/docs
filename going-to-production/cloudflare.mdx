@@ -134,7 +134,17 @@ Cloudflare Pages provides automatic image optimization:
 // src/components/global/optimized-image.tsx
 import Image from 'next/image';
 
-export function OptimizedImage({ src, alt, width, height }: { src: string; alt: string; width: number; height: number }) {
+export function OptimizedImage({
+  src,
+  alt,
+  width,
+  height,
+}: {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+}) {
   return (
     <Image
       src={src}
@@ -214,18 +224,12 @@ import { NextResponse } from 'next/server';
 
 export function middleware(request: Request) {
   const url = new URL(request.url);
-  
+
   // Redirect HTTP to HTTPS in production
-  if (
-    process.env['NODE_ENV'] === 'production' &&
-    url.protocol === 'http:'
-  ) {
-    return NextResponse.redirect(
-      `https://${url.hostname}${url.pathname}`,
-      301
-    );
+  if (process.env['NODE_ENV'] === 'production' && url.protocol === 'http:') {
+    return NextResponse.redirect(`https://${url.hostname}${url.pathname}`, 301);
   }
-  
+
   return NextResponse.next();
 }
 ```

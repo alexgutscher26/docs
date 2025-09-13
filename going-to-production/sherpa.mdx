@@ -143,18 +143,12 @@ import { NextResponse } from 'next/server';
 
 export function middleware(request: Request) {
   const url = new URL(request.url);
-  
+
   // Redirect HTTP to HTTPS in production
-  if (
-    process.env['NODE_ENV'] === 'production' &&
-    url.protocol === 'http:'
-  ) {
-    return NextResponse.redirect(
-      `https://${url.hostname}${url.pathname}`,
-      301
-    );
+  if (process.env['NODE_ENV'] === 'production' && url.protocol === 'http:') {
+    return NextResponse.redirect(`https://${url.hostname}${url.pathname}`, 301);
   }
-  
+
   return NextResponse.next();
 }
 ```

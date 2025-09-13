@@ -22,10 +22,10 @@ Define roles in your application based on user responsibilities:
 export const ROLES = {
   ADMIN: 'admin',
   USER: 'user',
-  MODERATOR: 'moderator'
+  MODERATOR: 'moderator',
 } as const;
 
-export type Role = typeof ROLES[keyof typeof ROLES];
+export type Role = (typeof ROLES)[keyof typeof ROLES];
 ```
 
 ### User Roles in Database
@@ -56,7 +56,7 @@ import { NextResponse } from 'next/server';
 
 export default authMiddleware({
   publicRoutes: ['/'],
-  beforeAuth: (req) => {
+  beforeAuth: req => {
     // Custom logic before authentication
   },
   afterAuth: (auth, req) => {
@@ -75,7 +75,7 @@ export default authMiddleware({
     }
 
     return NextResponse.next();
-  }
+  },
 });
 
 export const config = {
@@ -95,10 +95,10 @@ export const PERMISSIONS = {
   READ_POSTS: 'read:posts',
   WRITE_POSTS: 'write:posts',
   DELETE_POSTS: 'delete:posts',
-  MANAGE_USERS: 'manage:users'
+  MANAGE_USERS: 'manage:users',
 } as const;
 
-export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
+export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
 // Role to permissions mapping
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
@@ -106,11 +106,9 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   [ROLES.MODERATOR]: [
     PERMISSIONS.READ_POSTS,
     PERMISSIONS.WRITE_POSTS,
-    PERMISSIONS.DELETE_POSTS
+    PERMISSIONS.DELETE_POSTS,
   ],
-  [ROLES.USER]: [
-    PERMISSIONS.READ_POSTS
-  ]
+  [ROLES.USER]: [PERMISSIONS.READ_POSTS],
 };
 ```
 
@@ -146,9 +144,9 @@ export function withPermission<P extends object>(
           const response = await fetch('/api/auth/check-permission', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, permission: requiredPermission })
+            body: JSON.stringify({ userId, permission: requiredPermission }),
           });
-          
+
           const result = await response.json();
           setHasPermission(result.hasPermission);
         } catch (error) {
@@ -190,7 +188,7 @@ import { hasPermission } from '@/lib/auth/permissions';
 
 export async function GET(req: Request) {
   const { userId } = auth();
-  
+
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -205,7 +203,10 @@ export async function GET(req: Request) {
     const allPosts = await db.select().from(posts);
     return NextResponse.json(allPosts);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch posts' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch posts' },
+      { status: 500 }
+    );
   }
 }
 ```
@@ -227,38 +228,41 @@ import { hasPermission } from '@/lib/auth/permissions';
 
 const createPostSchema = z.object({
   title: z.string().min(1).max(100),
-  content: z.string().min(1).max(1000)
+  content: z.string().min(1).max(1000),
 });
 
-export const createPost = action(createPostSchema, async ({ title, content }) => {
-  const { userId } = auth();
-  
-  if (!userId) {
-    throw new Error('Unauthorized');
-  }
+export const createPost = action(
+  createPostSchema,
+  async ({ title, content }) => {
+    const { userId } = auth();
 
-  // Check if user has permission to create posts
-  const canWrite = await hasPermission(userId, PERMISSIONS.WRITE_POSTS);
-  if (!canWrite) {
-    throw new Error('Forbidden');
-  }
+    if (!userId) {
+      throw new Error('Unauthorized');
+    }
 
-  try {
-    const [post] = await db
-      .insert(posts)
-      .values({
-        title,
-        content,
-        userId,
-        createdAt: new Date()
-      })
-      .returning();
+    // Check if user has permission to create posts
+    const canWrite = await hasPermission(userId, PERMISSIONS.WRITE_POSTS);
+    if (!canWrite) {
+      throw new Error('Forbidden');
+    }
 
-    return { success: true, post };
-  } catch (error) {
-    return { success: false, error: 'Failed to create post' };
+    try {
+      const [post] = await db
+        .insert(posts)
+        .values({
+          title,
+          content,
+          userId,
+          createdAt: new Date(),
+        })
+        .returning();
+
+      return { success: true, post };
+    } catch (error) {
+      return { success: false, error: 'Failed to create post' };
+    }
   }
-});
+);
 ```
 
 ## Client-Side Access Control
@@ -283,7 +287,7 @@ export function AdminPanel() {
   useEffect(() => {
     async function checkAccess() {
       if (!userId) return;
-      
+
       const hasAccess = await hasPermission(userId, PERMISSIONS.MANAGE_USERS);
       setCanView(hasAccess);
     }
@@ -325,7 +329,7 @@ export function Sidebar() {
   useEffect(() => {
     async function loadPermissions() {
       if (!userId) return;
-      
+
       // Fetch user permissions
       const userPermissions = await getUserPermissions(userId);
       setPermissions(userPermissions);
@@ -337,15 +341,15 @@ export function Sidebar() {
   return (
     <nav>
       <SidebarLink href="/dashboard">Dashboard</SidebarLink>
-      
+
       {permissions.includes(PERMISSIONS.READ_POSTS) && (
         <SidebarLink href="/dashboard/posts">Posts</SidebarLink>
       )}
-      
+
       {permissions.includes(PERMISSIONS.MANAGE_USERS) && (
         <SidebarLink href="/dashboard/users">Users</SidebarLink>
       )}
-      
+
       {permissions.includes(PERMISSIONS.MANAGE_USERS) && (
         <SidebarLink href="/dashboard/settings">Settings</SidebarLink>
       )}
@@ -371,15 +375,18 @@ export async function getUserOrganizations(userId: string) {
     .select({
       id: organizations.id,
       name: organizations.name,
-      role: userOrganizations.role
+      role: userOrganizations.role,
     })
     .from(userOrganizations)
-    .innerJoin(organizations, eq(userOrganizations.organizationId, organizations.id))
+    .innerJoin(
+      organizations,
+      eq(userOrganizations.organizationId, organizations.id)
+    )
     .where(eq(userOrganizations.userId, userId));
 }
 
 export async function checkOrganizationAccess(
-  userId: string, 
+  userId: string,
   organizationId: string,
   requiredRole?: string
 ) {
@@ -436,7 +443,11 @@ Prevent users from gaining unauthorized access:
 
 ```ts
 // Always validate user input and permissions
-export async function updatePost(postId: number, data: Partial<Post>, userId: string) {
+export async function updatePost(
+  postId: number,
+  data: Partial<Post>,
+  userId: string
+) {
   // Verify the user owns the post or has admin permissions
   const post = await db
     .select()
@@ -448,8 +459,9 @@ export async function updatePost(postId: number, data: Partial<Post>, userId: st
     throw new Error('Post not found');
   }
 
-  const userCanEdit = post[0].userId === userId || 
-    await hasPermission(userId, PERMISSIONS.MANAGE_POSTS);
+  const userCanEdit =
+    post[0].userId === userId ||
+    (await hasPermission(userId, PERMISSIONS.MANAGE_POSTS));
 
   if (!userCanEdit) {
     throw new Error('Forbidden');

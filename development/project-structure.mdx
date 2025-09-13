@@ -59,6 +59,7 @@ Each page directory typically contains:
 - `layout.tsx`: Page-specific layout (optional)
 
 Example:
+
 ```tsx
 // src/app/(main)/dashboard/page.tsx
 import { DashboardHeader } from '@/components/dashboard/dashboard-header';
@@ -135,6 +136,7 @@ The `constants` directory contains application-wide constants and configuration 
 - `dashboard.ts`: Dashboard-related constants (analytics data, activities)
 
 Example:
+
 ```ts
 // src/constants/site.ts
 export const APP_NAME = process.env['NEXT_PUBLIC_APP_NAME'];
@@ -154,6 +156,7 @@ The `db` directory contains database configuration and schema definitions.
 - `index.ts`: Database client configuration
 
 Example:
+
 ```ts
 // src/db/schema/user.ts
 import { pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
@@ -177,6 +180,7 @@ The `functions` directory contains utility functions used throughout the applica
 - Other utility functions as needed
 
 Example:
+
 ```ts
 // src/functions/cn.ts
 import { type ClassValue, clsx } from 'clsx';
@@ -197,6 +201,7 @@ The `hooks` directory contains custom React hooks.
 - Other custom hooks as needed
 
 Example:
+
 ```ts
 // src/hooks/use-click-outside.ts
 import { useEffect, useRef } from 'react';
@@ -232,6 +237,7 @@ The `lib` directory contains library configurations and utilities.
 - Other library configurations
 
 Example:
+
 ```ts
 // src/lib/env.ts
 import { envSchema } from '@/schema/env-schema';
@@ -258,6 +264,7 @@ The `schema` directory contains Zod schemas for validation.
 - `env-schema.ts`: Environment variable validation schema
 
 Example:
+
 ```ts
 // src/schema/signin-schema.ts
 import { z } from 'zod';
@@ -279,6 +286,7 @@ The `styles` directory contains global styles and Tailwind CSS configuration.
 - `globals.css`: Global CSS styles and Tailwind directives
 
 Example:
+
 ```css
 /* src/styles/globals.css */
 @tailwind base;
@@ -353,4 +361,3 @@ When adding new features to your StackForge application:
 1. Check the file system to verify file locations
 2. Verify import paths are correct
 3. Ensure all components are properly exported
-

@@ -74,12 +74,12 @@ import { SignInForm } from '@/components/auth/signin-form';
 export default function CustomSignInPage() {
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <SignInForm 
+      <SignInForm
         appearance={{
           elements: {
             formButtonPrimary: 'bg-blue-500 hover:bg-blue-600 text-white',
             socialButtonsBlockButton: 'border-gray-200 hover:bg-gray-50',
-          }
+          },
         }}
         signUpURL="/auth/signup"
       />
@@ -99,12 +99,12 @@ import { SignUpForm } from '@/components/auth/signup-form';
 export default function CustomSignUpPage() {
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <SignUpForm 
+      <SignUpForm
         appearance={{
           elements: {
             formButtonPrimary: 'bg-green-500 hover:bg-green-600 text-white',
             socialButtonsBlockButton: 'border-gray-200 hover:bg-gray-50',
-          }
+          },
         }}
         signInURL="/auth/signin"
       />
@@ -162,7 +162,7 @@ const isAdminRoute = createRouteMatcher(['/admin(.*)']);
 
 export default clerkMiddleware((auth, req) => {
   const { userId, session } = auth();
-  
+
   // Protect admin routes
   if (isAdminRoute(req)) {
     // Check if user has admin role
@@ -171,7 +171,7 @@ export default clerkMiddleware((auth, req) => {
       return NextResponse.redirect(new URL('/unauthorized', req.url));
     }
   }
-  
+
   // ... rest of middleware logic
 });
 ```
@@ -186,11 +186,11 @@ import { useAuth } from '@clerk/nextjs';
 
 export default function UserProfile() {
   const { userId, sessionId, orgId } = useAuth();
-  
+
   if (!userId) {
     return <div>Please sign in</div>;
   }
-  
+
   return (
     <div>
       <p>User ID: {userId}</p>
@@ -211,6 +211,7 @@ Clerk supports social authentication providers out of the box. To enable social 
 4. Configure the OAuth credentials for each provider
 
 Supported providers include:
+
 - Google
 - GitHub
 - Facebook
@@ -233,11 +234,11 @@ export default function OrganizationSwitcher() {
   const { userMemberships } = useOrganizationList({
     infinite: true,
   });
-  
+
   return (
     <div>
       {organization && <p>Current organization: {organization.name}</p>}
-      {userMemberships?.data?.map((membership) => (
+      {userMemberships?.data?.map(membership => (
         <button key={membership.organization.id}>
           {membership.organization.name}
         </button>

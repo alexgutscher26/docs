@@ -12,6 +12,7 @@ Row Level Security (RLS) is a database security feature that enables you to rest
 In StackForge, we use PostgreSQL with Drizzle ORM for our database layer. While PostgreSQL doesn't have the same built-in RLS as Supabase, we can implement similar security patterns using PostgreSQL's Row Security Policies feature.
 
 RLS is particularly useful when:
+
 - Users should only access their own data
 - Team members should only access data belonging to their organization
 - Different roles have different access levels to the same data
@@ -36,27 +37,27 @@ Create policies that define who can perform what actions on the table:
 
 ```sql
 -- Allow users to read their own documents
-CREATE POLICY "Users can view their own documents" 
-ON documents FOR SELECT 
-TO authenticated 
+CREATE POLICY "Users can view their own documents"
+ON documents FOR SELECT
+TO authenticated
 USING (user_id = (SELECT auth.uid()));
 
 -- Allow users to insert their own documents
-CREATE POLICY "Users can insert their own documents" 
-ON documents FOR INSERT 
-TO authenticated 
+CREATE POLICY "Users can insert their own documents"
+ON documents FOR INSERT
+TO authenticated
 WITH CHECK (user_id = (SELECT auth.uid()));
 
 -- Allow users to update their own documents
-CREATE POLICY "Users can update their own documents" 
-ON documents FOR UPDATE 
-TO authenticated 
+CREATE POLICY "Users can update their own documents"
+ON documents FOR UPDATE
+TO authenticated
 USING (user_id = (SELECT auth.uid()));
 
 -- Allow users to delete their own documents
-CREATE POLICY "Users can delete their own documents" 
-ON documents FOR DELETE 
-TO authenticated 
+CREATE POLICY "Users can delete their own documents"
+ON documents FOR DELETE
+TO authenticated
 USING (user_id = (SELECT auth.uid()));
 ```
 
@@ -77,18 +78,18 @@ import { eq } from 'drizzle-orm';
 
 export async function GET(request: Request) {
   const { userId } = auth();
-  
+
   if (!userId) {
     return new Response('Unauthorized', { status: 401 });
   }
-  
+
   try {
     // Only fetch documents belonging to the authenticated user
     const userDocuments = await db
       .select()
       .from(documents)
       .where(eq(documents.userId, userId));
-      
+
     return Response.json(userDocuments);
   } catch (error) {
     return new Response('Internal Server Error', { status: 500 });
@@ -108,7 +109,7 @@ import { auth } from '@clerk/nextjs';
 import { and, eq } from 'drizzle-orm';
 
 export async function checkUserOrganizationAccess(
-  userId: string, 
+  userId: string,
   organizationId: string
 ) {
   const membership = await db
@@ -120,7 +121,7 @@ export async function checkUserOrganizationAccess(
         eq(memberships.organizationId, organizationId)
       )
     );
-    
+
   return membership.length > 0;
 }
 ```
@@ -158,8 +159,8 @@ ON sensitive_data FOR ALL
 TO authenticated
 USING (
   EXISTS (
-    SELECT 1 FROM user_roles 
-    WHERE user_roles.user_id = auth.uid() 
+    SELECT 1 FROM user_roles
+    WHERE user_roles.user_id = auth.uid()
     AND user_roles.role = 'admin'
   )
 );
@@ -172,12 +173,7 @@ import { and, eq, inArray } from 'drizzle-orm';
 const isAdmin = await db
   .select()
   .from(userRoles)
-  .where(
-    and(
-      eq(userRoles.userId, userId),
-      eq(userRoles.role, 'admin')
-    )
-  );
+  .where(and(eq(userRoles.userId, userId), eq(userRoles.role, 'admin')));
 
 if (isAdmin.length > 0) {
   // Admin can access all data
@@ -202,8 +198,8 @@ ON organization_data FOR ALL
 TO authenticated
 USING (
   EXISTS (
-    SELECT 1 FROM memberships 
-    WHERE memberships.user_id = auth.uid() 
+    SELECT 1 FROM memberships
+    WHERE memberships.user_id = auth.uid()
     AND memberships.organization_id = organization_data.org_id
   )
 );
@@ -248,35 +244,45 @@ import { users, documents } from '@/db/schema';
 describe('Row Level Security', () => {
   let user1Id: string;
   let user2Id: string;
-  
+
   beforeAll(async () => {
     // Create test users
-    const user1 = await db.insert(users).values({ /* user data */ }).returning();
-    const user2 = await db.insert(users).values({ /* user data */ }).returning();
-    
+    const user1 = await db
+      .insert(users)
+      .values({
+        /* user data */
+      })
+      .returning();
+    const user2 = await db
+      .insert(users)
+      .values({
+        /* user data */
+      })
+      .returning();
+
     user1Id = user1[0].id;
     user2Id = user2[0].id;
-    
+
     // Insert documents for each user
     await db.insert(documents).values({
       userId: user1Id,
       title: 'User 1 Document',
-      content: 'Content for user 1'
+      content: 'Content for user 1',
     });
-    
+
     await db.insert(documents).values({
       userId: user2Id,
       title: 'User 2 Document',
-      content: 'Content for user 2'
+      content: 'Content for user 2',
     });
   });
-  
+
   it('should only allow users to access their own documents', async () => {
     // Test user 1 can only see their document
     const user1Docs = await getDocumentsForUser(user1Id);
     expect(user1Docs).toHaveLength(1);
     expect(user1Docs[0].title).toBe('User 1 Document');
-    
+
     // Test user 2 can only see their document
     const user2Docs = await getDocumentsForUser(user2Id);
     expect(user2Docs).toHaveLength(1);

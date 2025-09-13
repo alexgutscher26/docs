@@ -12,6 +12,7 @@ Database security is a critical component of any application's overall security 
 StackForge uses PostgreSQL as its primary database with Drizzle ORM for data access. While PostgreSQL is a robust and secure database system, proper configuration and security practices are essential to protect your application's data.
 
 Key areas of database security include:
+
 - Connection security
 - Authentication and authorization
 - Data encryption
@@ -49,7 +50,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
 const client = postgres(process.env.DATABASE_URL!, {
-  max: 20,        // Maximum connections
+  max: 20, // Maximum connections
   idle_timeout: 20, // Close idle connections after 20 seconds
   max_lifetime: 60 * 60, // Close connections after 1 hour
 });
@@ -124,7 +125,7 @@ const client = postgres(process.env.DATABASE_URL!, {
   ssl: {
     rejectUnauthorized: true,
     ca: fs.readFileSync('/path/to/ca-certificate.pem').toString(),
-  }
+  },
 });
 ```
 
@@ -205,9 +206,9 @@ CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 SELECT * FROM pg_stat_activity WHERE state = 'active';
 
 -- Monitor slow queries
-SELECT query, calls, total_time, mean_time 
-FROM pg_stat_statements 
-ORDER BY mean_time DESC 
+SELECT query, calls, total_time, mean_time
+FROM pg_stat_statements
+ORDER BY mean_time DESC
 LIMIT 10;
 ```
 
@@ -304,8 +305,8 @@ Only install required extensions:
 
 ```sql
 -- List installed extensions
-SELECT name, default_version, installed_version 
-FROM pg_available_extensions 
+SELECT name, default_version, installed_version
+FROM pg_available_extensions
 WHERE installed_version IS NOT NULL;
 
 -- Remove unnecessary extensions
