@@ -1,0 +1,356 @@
+---
+title: 'Project Structure'
+description: 'Understand the StackForge project organization'
+---
+
+# Project Structure
+
+Understanding the project structure is essential for efficient development with StackForge. This guide explains the organization of files and directories in the StackForge boilerplate.
+
+## Overview
+
+StackForge follows a well-organized structure that separates concerns and makes it easy to navigate and extend the application. The structure is based on Next.js App Router conventions with additional organization for components, utilities, and configuration.
+
+## Directory Structure
+
+```
+src/
+├── app/                 # Next.js app router pages
+│   ├── (main)/          # Main application pages
+│   ├── (marketing)/     # Marketing pages
+│   ├── auth/            # Authentication pages
+│   └── layout.tsx       # Root layout
+├── components/          # React components
+│   ├── auth/            # Authentication components
+│   ├── dashboard/       # Dashboard components
+│   ├── global/          # Global components
+│   ├── marketing/       # Marketing components
+│   └── ui/              # UI components
+├── constants/           # Application constants
+├── db/                  # Database configuration and schema
+│   ├── schema/          # Drizzle schema definitions
+│   └── index.ts         # Database client configuration
+├── functions/           # Utility functions
+├── hooks/              # Custom React hooks
+├── lib/                # Library configurations
+├── schema/             # Validation schemas
+└── styles/             # Global styles
+```
+
+## App Directory
+
+The `app` directory follows Next.js App Router conventions and contains all the pages and layouts for your application.
+
+### Route Groups
+
+StackForge uses route groups to organize pages:
+
+- **(main)**: Contains the main application pages that require authentication
+- **(marketing)**: Contains public marketing pages
+- **auth**: Contains authentication-related pages
+
+### Page Structure
+
+Each page directory typically contains:
+
+- `page.tsx`: The main page component
+- `loading.tsx`: Loading state component (optional)
+- `error.tsx`: Error boundary component (optional)
+- `layout.tsx`: Page-specific layout (optional)
+
+Example:
+```tsx
+// src/app/(main)/dashboard/page.tsx
+import { DashboardHeader } from '@/components/dashboard/dashboard-header';
+import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+
+export default function DashboardPage() {
+  return (
+    <DashboardShell>
+      <DashboardHeader heading="Dashboard" text="Welcome to your dashboard" />
+      {/* Dashboard content */}
+    </DashboardShell>
+  );
+}
+```
+
+## Components Directory
+
+The `components` directory is organized by feature and contains all React components used in the application.
+
+### Component Organization
+
+- **auth**: Authentication-related components (sign-in form, sign-up form)
+- **dashboard**: Dashboard-specific components (sidebar, navbar, charts)
+- **global**: Shared components used across the application (buttons, icons, providers)
+- **marketing**: Marketing page components (hero, features, testimonials)
+- **ui**: Reusable UI components (based on shadcn/ui)
+
+### Component Structure
+
+Components follow a consistent structure:
+
+```tsx
+// src/components/dashboard/dashboard-header.tsx
+'use client';
+
+import { cn } from '@/functions/cn';
+
+interface DashboardHeaderProps {
+  heading: string;
+  text?: string;
+  children?: React.ReactNode;
+  className?: string;
+}
+
+export function DashboardHeader({
+  heading,
+  text,
+  children,
+  className,
+}: DashboardHeaderProps) {
+  return (
+    <div className={cn('flex items-center justify-between px-2', className)}>
+      <div className="grid gap-1">
+        <h1 className="font-heading text-3xl md:text-4xl">{heading}</h1>
+        {text && <p className="text-lg text-muted-foreground">{text}</p>}
+      </div>
+      {children}
+    </div>
+  );
+}
+```
+
+## Constants Directory
+
+The `constants` directory contains application-wide constants and configuration values.
+
+### Constant Files
+
+- `site.ts`: Site-wide configuration (app name, domain)
+- `links.ts`: Navigation links for sidebar and footer
+- `plans.ts`: Pricing plans and features
+- `perks.ts`: Features and benefits
+- `reviews.ts`: Testimonials and reviews
+- `dashboard.ts`: Dashboard-related constants (analytics data, activities)
+
+Example:
+```ts
+// src/constants/site.ts
+export const APP_NAME = process.env['NEXT_PUBLIC_APP_NAME'];
+export const APP_DOMAIN = `https://${process.env['NEXT_PUBLIC_APP_DOMAIN']}`;
+```
+
+## Database Directory
+
+The `db` directory contains database configuration and schema definitions.
+
+### Schema Files
+
+- `schema/`: Contains Drizzle ORM schema definitions
+  - `user.ts`: User table schema
+  - `post.ts`: Post table schema
+  - `index.ts`: Schema exports
+- `index.ts`: Database client configuration
+
+Example:
+```ts
+// src/db/schema/user.ts
+import { pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
+
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  name: text('name'),
+  email: text('email').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+```
+
+## Functions Directory
+
+The `functions` directory contains utility functions used throughout the application.
+
+### Utility Functions
+
+- `cn.ts`: Class name utility (tailwind-merge)
+- `metadata.ts`: Metadata generation functions
+- Other utility functions as needed
+
+Example:
+```ts
+// src/functions/cn.ts
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+```
+
+## Hooks Directory
+
+The `hooks` directory contains custom React hooks.
+
+### Custom Hooks
+
+- `use-click-outside.ts`: Detect clicks outside an element
+- Other custom hooks as needed
+
+Example:
+```ts
+// src/hooks/use-click-outside.ts
+import { useEffect, useRef } from 'react';
+
+export function useClickOutside(callback: () => void) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        callback();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [callback]);
+
+  return ref;
+}
+```
+
+## Lib Directory
+
+The `lib` directory contains library configurations and utilities.
+
+### Library Files
+
+- `env.ts`: Environment variable validation
+- `prisma.ts`: Prisma client configuration (if using Prisma)
+- Other library configurations
+
+Example:
+```ts
+// src/lib/env.ts
+import { envSchema } from '@/schema/env-schema';
+
+export function validateEnv() {
+  try {
+    const parsedEnv = envSchema.parse(process.env);
+    return parsedEnv;
+  } catch (error) {
+    console.error('❌ Invalid environment variables:', error);
+    throw new Error('Invalid environment variables');
+  }
+}
+```
+
+## Schema Directory
+
+The `schema` directory contains Zod schemas for validation.
+
+### Schema Files
+
+- `signin-schema.ts`: Sign-in form validation schema
+- `signup-schema.ts`: Sign-up form validation schema
+- `env-schema.ts`: Environment variable validation schema
+
+Example:
+```ts
+// src/schema/signin-schema.ts
+import { z } from 'zod';
+
+export const SignInSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
+export type SignInSchemaType = z.infer<typeof SignInSchema>;
+```
+
+## Styles Directory
+
+The `styles` directory contains global styles and Tailwind CSS configuration.
+
+### Style Files
+
+- `globals.css`: Global CSS styles and Tailwind directives
+
+Example:
+```css
+/* src/styles/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+  }
+}
+```
+
+## Configuration Files
+
+StackForge also includes several configuration files in the root directory:
+
+- `next.config.mjs`: Next.js configuration
+- `tailwind.config.ts`: Tailwind CSS configuration
+- `tsconfig.json`: TypeScript configuration
+- `drizzle.config.ts`: Drizzle ORM configuration
+- `package.json`: Project dependencies and scripts
+
+## Best Practices
+
+### Naming Conventions
+
+1. Use kebab-case for file names
+2. Use PascalCase for component files
+3. Use descriptive names that reflect the component's purpose
+
+### Organization Principles
+
+1. Group related files together
+2. Keep components small and focused
+3. Use index.ts files for easy imports
+4. Follow the established patterns
+
+### Import Aliases
+
+StackForge uses TypeScript path aliases for cleaner imports:
+
+```ts
+// Instead of relative imports
+import Button from '../../../components/ui/button';
+
+// Use absolute imports with aliases
+import { Button } from '@/components/ui/button';
+```
+
+## Extending the Structure
+
+When adding new features to your StackForge application:
+
+1. **New Pages**: Add to the appropriate route group in `src/app/`
+2. **New Components**: Create in the relevant directory in `src/components/`
+3. **New Constants**: Add to `src/constants/`
+4. **New Database Tables**: Add to `src/db/schema/`
+5. **New Utilities**: Add to `src/functions/` or `src/lib/`
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Import errors**: Check that file paths and names are correct
+2. **Component not found**: Verify the component exists and is exported
+3. **Type errors**: Ensure all types are properly defined
+
+### Debugging Structure Issues
+
+1. Check the file system to verify file locations
+2. Verify import paths are correct
+3. Ensure all components are properly exported
+

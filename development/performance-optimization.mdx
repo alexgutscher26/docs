@@ -1,0 +1,405 @@
+---
+title: 'Performance Optimization'
+description: 'Optimize your StackForge application for speed and efficiency'
+---
+
+# Performance Optimization
+
+Performance optimization is crucial for providing a great user experience and ensuring your StackForge application scales effectively. This guide covers best practices and techniques for optimizing your application.
+
+## Overview
+
+StackForge is built with performance in mind, but there are several areas where you can further optimize your application for speed and efficiency. This guide covers optimization techniques for both client-side and server-side performance.
+
+## Client-Side Optimization
+
+### Code Splitting
+
+Next.js automatically code-splits your application by route, but you can further optimize by dynamically importing components that aren't immediately needed:
+
+```tsx
+// Dynamically import heavy components
+import dynamic from 'next/dynamic';
+
+const HeavyChartComponent = dynamic(
+  () => import('@/components/dashboard/heavy-chart'),
+  {
+    loading: () => <p>Loading chart...</p>,
+    ssr: false // Disable SSR if the component is client-only
+  }
+);
+
+export default function DashboardPage() {
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <HeavyChartComponent />
+    </div>
+  );
+}
+```
+
+### Image Optimization
+
+Use Next.js's built-in Image component for automatic optimization:
+
+```tsx
+import Image from 'next/image';
+
+export default function Logo() {
+  return (
+    <Image
+      src="/logo.png"
+      alt="Company Logo"
+      width={200}
+      height={50}
+      priority // For above-the-fold images
+    />
+  );
+}
+```
+
+### Bundle Analysis
+
+Regularly analyze your bundle size to identify large dependencies:
+
+```bash
+# Install bundle analyzer
+bun add @next/bundle-analyzer
+
+# Add to next.config.mjs
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
+module.exports = withBundleAnalyzer(nextConfig);
+```
+
+Run with:
+```bash
+ANALYZE=true bun run build
+```
+
+### Lazy Loading
+
+Implement lazy loading for components that aren't immediately visible:
+
+```tsx
+'use client';
+
+import { useState, useEffect } from 'react';
+
+export default function LazyComponent() {
+  const [Component, setComponent] = useState(null);
+
+  useEffect(() => {
+    import('@/components/heavy-component').then((mod) => {
+      setComponent(() => mod.HeavyComponent);
+    });
+  }, []);
+
+  if (!Component) {
+    return <div>Loading...</div>;
+  }
+
+  return <Component />;
+}
+```
+
+## Server-Side Optimization
+
+### Database Query Optimization
+
+Optimize your Drizzle ORM queries by selecting only needed fields:
+
+```ts
+// Instead of selecting all fields
+const users = await db.select().from(usersTable);
+
+// Select only needed fields
+const users = await db
+  .select({
+    id: usersTable.id,
+    name: usersTable.name,
+    email: usersTable.email
+  })
+  .from(usersTable);
+```
+
+### Caching Strategies
+
+Implement caching for expensive operations:
+
+```ts
+// Using Next.js fetch cache
+async function getCachedData() {
+  const res = await fetch('https://api.example.com/data', {
+    next: { revalidate: 3600 } // Revalidate every hour
+  });
+  return res.json();
+}
+
+// Using Redis for application-level caching
+import { redis } from '@/lib/redis';
+
+async function getCachedUserData(userId: string) {
+  const cached = await redis.get(`user:${userId}`);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  const user = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.id, userId))
+    .limit(1);
+
+  await redis.setex(`user:${userId}`, 3600, JSON.stringify(user));
+  return user;
+}
+```
+
+### Server Actions Optimization
+
+Optimize server actions by implementing proper validation and error handling:
+
+```ts
+'use server';
+
+import { z } from 'zod';
+import { action } from '@/lib/safe-action';
+import { db } from '@/db';
+import { posts } from '@/db/schema';
+
+const createPostSchema = z.object({
+  title: z.string().min(1).max(100),
+  content: z.string().min(1).max(1000)
+});
+
+export const createPost = action(createPostSchema, async ({ title, content }) => {
+  try {
+    const [post] = await db
+      .insert(posts)
+      .values({
+        title,
+        content,
+        createdAt: new Date()
+      })
+      .returning();
+
+    // Revalidate relevant cache tags
+    revalidateTag('posts');
+
+    return { success: true, post };
+  } catch (error) {
+    return { success: false, error: 'Failed to create post' };
+  }
+});
+```
+
+## Asset Optimization
+
+### Font Optimization
+
+Use Next.js's font optimization features:
+
+```tsx
+// app/layout.tsx
+import { Inter } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'] });
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" className={inter.className}>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+### CSS Optimization
+
+Minimize CSS and remove unused styles:
+
+```css
+/* Use PurgeCSS or similar tools to remove unused styles */
+/* In tailwind.config.ts, configure content paths properly */
+
+module.exports = {
+  content: [
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  // ...
+}
+```
+
+## Monitoring and Measurement
+
+### Web Vitals
+
+Monitor Core Web Vitals using Next.js's built-in reporting:
+
+```tsx
+// app/layout.tsx
+import { reportWebVitals } from '@/lib/web-vitals';
+
+export default function RootLayout({ children }) {
+  useEffect(() => {
+    reportWebVitals();
+  }, []);
+
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+### Performance Profiling
+
+Use React DevTools Profiler to identify performance bottlenecks:
+
+1. Install React DevTools browser extension
+2. Enable profiler in development
+3. Record interactions to identify slow components
+
+### Lighthouse Audits
+
+Regularly run Lighthouse audits to identify performance improvements:
+
+```bash
+# Run Lighthouse audit
+npx lighthouse http://localhost:3000 --view
+```
+
+## Best Practices
+
+### 1. Minimize JavaScript Bundle Size
+
+- Remove unused dependencies
+- Use tree-shaking compatible libraries
+- Code-split large libraries
+
+### 2. Optimize Images
+
+- Use modern formats (WebP, AVIF)
+- Implement responsive images
+- Lazy load off-screen images
+
+### 3. Efficient Data Fetching
+
+- Fetch only required data
+- Implement proper pagination
+- Use streaming for large datasets
+
+### 4. Caching Strategies
+
+- Implement browser caching headers
+- Use CDN for static assets
+- Cache API responses appropriately
+
+### 5. Database Optimization
+
+- Add proper indexes
+- Use connection pooling
+- Optimize complex queries
+
+## Common Performance Issues
+
+### Large Bundle Sizes
+
+Identify and address large dependencies:
+
+```bash
+# Analyze bundle size
+bun run build
+bun run analyze
+```
+
+### Slow Database Queries
+
+Monitor and optimize slow queries:
+
+```ts
+// Log slow queries
+const start = Date.now();
+const result = await db.select().from(usersTable);
+const duration = Date.now() - start;
+
+if (duration > 1000) {
+  console.warn(`Slow query detected: ${duration}ms`);
+}
+```
+
+### Unoptimized Images
+
+Ensure all images use the Next.js Image component:
+
+```tsx
+// ❌ Bad - unoptimized
+<img src="/large-image.jpg" alt="Large image" />
+
+// ✅ Good - optimized
+<Image 
+  src="/large-image.jpg" 
+  alt="Large image" 
+  width={800} 
+  height={600} 
+/>
+```
+
+## Performance Testing
+
+### Automated Testing
+
+Implement performance regression tests:
+
+```ts
+// __tests__/performance.test.ts
+import { test, expect } from '@playwright/test';
+
+test('homepage should load within 2 seconds', async ({ page }) => {
+  const startTime = Date.now();
+  await page.goto('/');
+  const loadTime = Date.now() - startTime;
+  
+  expect(loadTime).toBeLessThan(2000);
+});
+```
+
+### Manual Testing
+
+Regularly test your application:
+1. Test on different devices and network conditions
+2. Use Chrome DevTools Performance tab
+3. Monitor real user metrics (RUM)
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Access Control"
+  icon="lock"
+  href="/development/access-control"
+>
+  Learn about implementing roles and permissions
+</Card>
+
+<Card
+  title="Content Management"
+  icon="file-text"
+  href="/development/content-management"
+>
+  Manage marketing pages and content
+</Card>
+
+</CardGroup>

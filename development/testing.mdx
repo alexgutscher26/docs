@@ -1,0 +1,530 @@
+---
+title: 'Testing'
+description: 'Learn how to write and run tests for your StackForge application'
+---
+
+# Testing
+
+Learn how to write and run tests for your StackForge application. This guide covers unit testing, integration testing, end-to-end testing, and best practices for ensuring code quality.
+
+## Testing Architecture
+
+StackForge supports multiple types of testing to ensure application quality:
+
+1. **Unit Testing**: Test individual functions and components in isolation
+2. **Integration Testing**: Test interactions between components and services
+3. **End-to-End Testing**: Test user workflows from start to finish
+4. **Snapshot Testing**: Test UI component rendering consistency
+
+## Unit Testing
+
+### Jest Configuration
+
+StackForge uses Jest as the testing framework. The configuration is in `jest.config.js`:
+
+```js
+// jest.config.js
+module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
+  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
+};
+```
+
+### Writing Unit Tests
+
+Create test files alongside the code they test:
+
+```ts
+// src/functions/format-date.test.ts
+import { formatDate } from './format-date';
+
+describe('formatDate', () => {
+  it('should format date correctly', () => {
+    const date = new Date('2023-01-01');
+    expect(formatDate(date)).toBe('January 1, 2023');
+  });
+
+  it('should handle invalid dates', () => {
+    expect(formatDate(new Date('invalid'))).toBe('Invalid Date');
+  });
+});
+```
+
+### Testing React Components
+
+Test React components using React Testing Library:
+
+```tsx
+// src/components/ui/button.test.tsx
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { Button } from '@/components/ui/button';
+
+describe('Button', () => {
+  it('renders with correct text', () => {
+    render(<Button>Click me</Button>);
+    expect(screen.getByText('Click me')).toBeInTheDocument();
+  });
+
+  it('calls onClick when clicked', async () => {
+    const user = userEvent.setup();
+    const onClick = jest.fn();
+    
+    render(<Button onClick={onClick}>Click me</Button>);
+    
+    await user.click(screen.getByText('Click me'));
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('is disabled when disabled prop is true', () => {
+    render(<Button disabled>Click me</Button>);
+    expect(screen.getByText('Click me')).toBeDisabled();
+  });
+});
+```
+
+### Testing Hooks
+
+Test custom hooks using React Hooks Testing Library:
+
+```ts
+// src/hooks/use-counter.test.ts
+import { renderHook, act } from '@testing-library/react';
+import { useCounter } from './use-counter';
+
+describe('useCounter', () => {
+  it('should initialize with default value', () => {
+    const { result } = renderHook(() => useCounter());
+    expect(result.current.count).toBe(0);
+  });
+
+  it('should increment count', () => {
+    const { result } = renderHook(() => useCounter());
+    
+    act(() => {
+      result.current.increment();
+    });
+    
+    expect(result.current.count).toBe(1);
+  });
+
+  it('should decrement count', () => {
+    const { result } = renderHook(() => useCounter(5));
+    
+    act(() => {
+      result.current.decrement();
+    });
+    
+    expect(result.current.count).toBe(4);
+  });
+});
+```
+
+## Integration Testing
+
+### Testing API Routes
+
+Test API routes by importing and calling the route handlers:
+
+```ts
+// src/app/api/posts/route.test.ts
+import { GET, POST } from './route';
+import { NextResponse } from 'next/server';
+
+// Mock the database
+jest.mock('@/db', () => ({
+  db: {
+    query: {
+      posts: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: 1, title: 'Test Post', content: 'Test content' },
+        ]),
+        findFirst: jest.fn().mockResolvedValue({
+          id: 1,
+          title: 'Test Post',
+          content: 'Test content',
+        }),
+      },
+    },
+    insert: jest.fn().mockReturnValue({
+      values: jest.fn().mockReturnValue({
+        returning: jest.fn().mockResolvedValue([{
+          id: 1,
+          title: 'New Post',
+          content: 'New content',
+        }]),
+      }),
+    }),
+  },
+}));
+
+describe('POST /api/posts', () => {
+  it('should create a new post', async () => {
+    const request = new Request('http://localhost/api/posts', {
+      method: 'POST',
+      body: JSON.stringify({
+        title: 'New Post',
+        content: 'New content',
+        userId: 1,
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(data.title).toBe('New Post');
+  });
+});
+```
+
+### Testing Database Operations
+
+Test database operations with a test database:
+
+```ts
+// src/db/schema/user.test.ts
+import { db } from '@/db';
+import { users } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+
+describe('User schema', () => {
+  beforeAll(async () => {
+    // Set up test database
+  });
+
+  afterAll(async () => {
+    // Clean up test database
+  });
+
+  it('should insert a new user', async () => {
+    const newUser = await db.insert(users).values({
+      name: 'Test User',
+      email: 'test@example.com',
+    }).returning();
+
+    expect(newUser[0].name).toBe('Test User');
+    expect(newUser[0].email).toBe('test@example.com');
+  });
+
+  it('should find a user by email', async () => {
+    const user = await db.query.users.findFirst({
+      where: eq(users.email, 'test@example.com'),
+    });
+
+    expect(user).toBeDefined();
+    expect(user?.name).toBe('Test User');
+  });
+});
+```
+
+## End-to-End Testing
+
+### Playwright Configuration
+
+StackForge supports Playwright for end-to-end testing. The configuration is in `playwright.config.ts`:
+
+```ts
+// playwright.config.ts
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './e2e',
+  timeout: 30000,
+  use: {
+    baseURL: 'http://localhost:3000',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+  },
+  webServer: {
+    command: 'bun run dev',
+    url: 'http://localhost:3000',
+    timeout: 120000,
+    reuseExistingServer: !process.env.CI,
+  },
+});
+```
+
+### Writing E2E Tests
+
+Create end-to-end tests in the `e2e/` directory:
+
+```ts
+// e2e/auth.spec.ts
+import { test, expect } from '@playwright/test';
+
+test('should allow user to sign up', async ({ page }) => {
+  await page.goto('/auth/signup');
+  
+  await page.fill('input[name="email"]', 'test@example.com');
+  await page.fill('input[name="password"]', 'password123');
+  await page.click('button[type="submit"]');
+  
+  await expect(page).toHaveURL('/dashboard');
+  await expect(page.getByText('Welcome to your dashboard')).toBeVisible();
+});
+
+test('should allow user to sign in', async ({ page }) => {
+  await page.goto('/auth/signin');
+  
+  await page.fill('input[name="email"]', 'test@example.com');
+  await page.fill('input[name="password"]', 'password123');
+  await page.click('button[type="submit"]');
+  
+  await expect(page).toHaveURL('/dashboard');
+});
+```
+
+### Testing User Workflows
+
+Test complete user workflows:
+
+```ts
+// e2e/dashboard.spec.ts
+import { test, expect } from '@playwright/test';
+
+test('should allow user to create a post', async ({ page }) => {
+  // Sign in
+  await page.goto('/auth/signin');
+  await page.fill('input[name="email"]', 'test@example.com');
+  await page.fill('input[name="password"]', 'password123');
+  await page.click('button[type="submit"]');
+  
+  // Navigate to posts page
+  await page.click('a[href="/dashboard/posts"]');
+  
+  // Create new post
+  await page.click('button:has-text("Create Post")');
+  await page.fill('input[name="title"]', 'Test Post');
+  await page.fill('textarea[name="content"]', 'This is a test post');
+  await page.click('button[type="submit"]');
+  
+  // Verify post was created
+  await expect(page.getByText('Test Post')).toBeVisible();
+});
+```
+
+## Snapshot Testing
+
+### Component Snapshots
+
+Test component rendering with snapshot testing:
+
+```tsx
+// src/components/dashboard/analytics-card.test.tsx
+import { render } from '@testing-library/react';
+import { AnalyticsCard } from '@/components/dashboard/analytics-card';
+
+describe('AnalyticsCard', () => {
+  it('should match snapshot', () => {
+    const { container } = render(
+      <AnalyticsCard
+        title="Engagement"
+        data={[{ name: 'Jan', value: 100 }]}
+      />
+    );
+    
+    expect(container).toMatchSnapshot();
+  });
+});
+```
+
+## Test Utilities
+
+### Mocking Dependencies
+
+Mock external dependencies for isolated testing:
+
+```ts
+// __mocks__/next/router.ts
+const useRouter = jest.fn(() => ({
+  route: '/',
+  pathname: '/',
+  query: {},
+  asPath: '/',
+  push: jest.fn(),
+  replace: jest.fn(),
+  reload: jest.fn(),
+  back: jest.fn(),
+  prefetch: jest.fn(),
+  beforePopState: jest.fn(),
+}));
+
+export { useRouter };
+```
+
+### Test Data Factories
+
+Create test data factories for consistent test data:
+
+```ts
+// src/test/factories/user-factory.ts
+import { faker } from '@faker-js/faker';
+
+export interface UserFactoryParams {
+  id?: number;
+  name?: string;
+  email?: string;
+}
+
+export function createUser(params: UserFactoryParams = {}) {
+  return {
+    id: params.id ?? faker.number.int(),
+    name: params.name ?? faker.person.fullName(),
+    email: params.email ?? faker.internet.email(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+}
+```
+
+## Running Tests
+
+### Test Commands
+
+Run tests using the following commands:
+
+```bash
+# Run all tests
+bun run test
+
+# Run tests in watch mode
+bun run test:watch
+
+# Run tests with coverage
+bun run test:coverage
+
+# Run specific test file
+bun run test src/components/ui/button.test.tsx
+
+# Run tests matching a pattern
+bun run test -- testNamePattern="Button"
+```
+
+### CI/CD Integration
+
+Configure tests to run in CI/CD pipelines:
+
+```yaml
+# .github/workflows/test.yml
+name: Test
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: oven-sh/setup-bun@v1
+      - run: bun install
+      - run: bun run test
+      - run: bun run test:e2e
+```
+
+## Test Coverage
+
+### Coverage Configuration
+
+Configure test coverage thresholds:
+
+```js
+// jest.config.js
+module.exports = {
+  // ... other config
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/**/*.test.{ts,tsx}',
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80,
+    },
+  },
+};
+```
+
+### Coverage Reports
+
+Generate and view coverage reports:
+
+```bash
+# Generate coverage report
+bun run test:coverage
+
+# View HTML coverage report
+open coverage/lcov-report/index.html
+```
+
+## Best Practices
+
+### Test Organization
+
+1. **Co-locate tests with implementation**
+2. **Use descriptive test names**
+3. **Group related tests in describe blocks**
+4. **Keep tests focused and isolated**
+5. **Use beforeEach/afterEach for setup/teardown**
+
+### Test Quality
+
+1. **Test behavior, not implementation**
+2. **Use realistic test data**
+3. **Test edge cases and error conditions**
+4. **Avoid testing implementation details**
+5. **Keep tests maintainable and readable**
+
+### Performance
+
+1. **Use mock data instead of real API calls**
+2. **Clean up test data after tests**
+3. **Use parallel test execution**
+4. **Avoid expensive setup in tests**
+5. **Use factories for test data generation**
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Tests failing due to async operations**: Use async/await or act()
+2. **Mocking issues**: Ensure mocks are properly configured
+3. **Test environment differences**: Check environment variables
+4. **Database test issues**: Use separate test database
+5. **Snapshot test failures**: Update snapshots when UI changes intentionally
+
+### Debugging Tests
+
+1. **Use console.log for debugging**
+2. **Run tests in watch mode**
+3. **Use debugger statements**
+4. **Check test output and error messages**
+5. **Verify test setup and configuration**
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Debugging"
+  icon="bug"
+  href="/development/debugging"
+>
+  Learn how to troubleshoot common development issues
+</Card>
+
+<Card
+  title="Performance Optimization"
+  icon="zap"
+  href="/development/performance-optimization"
+>
+  Learn how to optimize your application for speed and efficiency
+</Card>
+
+</CardGroup>

@@ -25,8 +25,24 @@
               "quickstart",
               "common-commands",
               "deployment",
-              "development",
               "updating-codebase"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "development/index",
+              "development/approaching-local-development",
+              "development/project-structure",
+              "development/component-development",
+              "development/api-development",
+              "development/database-management",
+              "development/testing",
+              "development/debugging",
+              "development/performance-optimization",
+              "development/access-control",
+              "development/content-management",
+              "development/search-engine-optimization"
             ]
           },
           {

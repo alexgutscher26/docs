@@ -1,0 +1,532 @@
+---
+title: 'Access Control'
+description: 'Learn about roles, permissions, and access control in StackForge'
+---
+
+# Access Control
+
+Access control is essential for securing your StackForge application and ensuring users only have access to appropriate resources. This guide covers implementing roles, permissions, and access control patterns.
+
+## Overview
+
+StackForge uses Clerk for authentication and provides a flexible foundation for implementing access control. This guide covers role-based access control (RBAC) patterns and best practices.
+
+## Role-Based Access Control (RBAC)
+
+### Defining Roles
+
+Define roles in your application based on user responsibilities:
+
+```ts
+// src/constants/roles.ts
+export const ROLES = {
+  ADMIN: 'admin',
+  USER: 'user',
+  MODERATOR: 'moderator'
+} as const;
+
+export type Role = typeof ROLES[keyof typeof ROLES];
+```
+
+### User Roles in Database
+
+Extend your user model to include roles:
+
+```ts
+// src/db/schema/user.ts
+import { pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
+
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  name: text('name'),
+  email: text('email').notNull(),
+  role: text('role').default('user'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+```
+
+### Role-Based Middleware
+
+Create middleware to protect routes based on roles:
+
+```ts
+// src/lib/auth/middleware.ts
+import { authMiddleware } from '@clerk/nextjs';
+import { NextResponse } from 'next/server';
+
+export default authMiddleware({
+  publicRoutes: ['/'],
+  beforeAuth: (req) => {
+    // Custom logic before authentication
+  },
+  afterAuth: (auth, req) => {
+    // Redirect unauthenticated users
+    if (!auth.userId && !auth.isPublicRoute) {
+      return NextResponse.redirect(new URL('/auth/sign-in', req.url));
+    }
+
+    // Check role-based access
+    const role = getUserRole(auth.userId);
+    const pathname = req.nextUrl.pathname;
+
+    // Admin-only routes
+    if (pathname.startsWith('/admin') && role !== 'admin') {
+      return NextResponse.redirect(new URL('/unauthorized', req.url));
+    }
+
+    return NextResponse.next();
+  }
+});
+
+export const config = {
+  matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
+};
+```
+
+## Permission-Based Access Control
+
+### Defining Permissions
+
+Create a permissions system for fine-grained access control:
+
+```ts
+// src/constants/permissions.ts
+export const PERMISSIONS = {
+  READ_POSTS: 'read:posts',
+  WRITE_POSTS: 'write:posts',
+  DELETE_POSTS: 'delete:posts',
+  MANAGE_USERS: 'manage:users'
+} as const;
+
+export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
+
+// Role to permissions mapping
+export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
+  [ROLES.ADMIN]: Object.values(PERMISSIONS),
+  [ROLES.MODERATOR]: [
+    PERMISSIONS.READ_POSTS,
+    PERMISSIONS.WRITE_POSTS,
+    PERMISSIONS.DELETE_POSTS
+  ],
+  [ROLES.USER]: [
+    PERMISSIONS.READ_POSTS
+  ]
+};
+```
+
+### Checking Permissions
+
+Implement permission checking in your components and server actions:
+
+```tsx
+// src/components/auth/with-permission.tsx
+'use client';
+
+import { useAuth } from '@clerk/nextjs';
+import { useEffect, useState } from 'react';
+
+export function withPermission<P extends object>(
+  WrappedComponent: React.ComponentType<P>,
+  requiredPermission: Permission
+) {
+  return function WithPermission(props: P) {
+    const { userId } = useAuth();
+    const [hasPermission, setHasPermission] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      async function checkPermission() {
+        if (!userId) {
+          setHasPermission(false);
+          setLoading(false);
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/auth/check-permission', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, permission: requiredPermission })
+          });
+          
+          const result = await response.json();
+          setHasPermission(result.hasPermission);
+        } catch (error) {
+          setHasPermission(false);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      checkPermission();
+    }, [userId, requiredPermission]);
+
+    if (loading) {
+      return <div>Loading...</div>;
+    }
+
+    if (!hasPermission) {
+      return <div>Access denied</div>;
+    }
+
+    return <WrappedComponent {...props} />;
+  };
+}
+```
+
+## Server-Side Access Control
+
+### Protecting API Routes
+
+Implement access control in API routes:
+
+```ts
+// src/app/api/posts/route.ts
+import { auth } from '@clerk/nextjs';
+import { NextResponse } from 'next/server';
+import { db } from '@/db';
+import { posts } from '@/db/schema';
+import { hasPermission } from '@/lib/auth/permissions';
+
+export async function GET(req: Request) {
+  const { userId } = auth();
+  
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Check if user has permission to read posts
+  const canRead = await hasPermission(userId, PERMISSIONS.READ_POSTS);
+  if (!canRead) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  try {
+    const allPosts = await db.select().from(posts);
+    return NextResponse.json(allPosts);
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to fetch posts' }, { status: 500 });
+  }
+}
+```
+
+### Server Actions with Access Control
+
+Protect server actions with permission checks:
+
+```ts
+// src/actions/post-actions.ts
+'use server';
+
+import { auth } from '@clerk/nextjs';
+import { z } from 'zod';
+import { action } from '@/lib/safe-action';
+import { db } from '@/db';
+import { posts } from '@/db/schema';
+import { hasPermission } from '@/lib/auth/permissions';
+
+const createPostSchema = z.object({
+  title: z.string().min(1).max(100),
+  content: z.string().min(1).max(1000)
+});
+
+export const createPost = action(createPostSchema, async ({ title, content }) => {
+  const { userId } = auth();
+  
+  if (!userId) {
+    throw new Error('Unauthorized');
+  }
+
+  // Check if user has permission to create posts
+  const canWrite = await hasPermission(userId, PERMISSIONS.WRITE_POSTS);
+  if (!canWrite) {
+    throw new Error('Forbidden');
+  }
+
+  try {
+    const [post] = await db
+      .insert(posts)
+      .values({
+        title,
+        content,
+        userId,
+        createdAt: new Date()
+      })
+      .returning();
+
+    return { success: true, post };
+  } catch (error) {
+    return { success: false, error: 'Failed to create post' };
+  }
+});
+```
+
+## Client-Side Access Control
+
+### Conditional Rendering
+
+Render components based on user permissions:
+
+```tsx
+// src/components/dashboard/admin-panel.tsx
+'use client';
+
+import { useAuth } from '@clerk/nextjs';
+import { useEffect, useState } from 'react';
+import { hasPermission } from '@/lib/auth/permissions';
+import { PERMISSIONS } from '@/constants/permissions';
+
+export function AdminPanel() {
+  const { userId } = useAuth();
+  const [canView, setCanView] = useState(false);
+
+  useEffect(() => {
+    async function checkAccess() {
+      if (!userId) return;
+      
+      const hasAccess = await hasPermission(userId, PERMISSIONS.MANAGE_USERS);
+      setCanView(hasAccess);
+    }
+
+    checkAccess();
+  }, [userId]);
+
+  if (!canView) {
+    return null;
+  }
+
+  return (
+    <div className="admin-panel">
+      <h2>Admin Panel</h2>
+      {/* Admin-specific content */}
+    </div>
+  );
+}
+```
+
+### Navigation Based on Permissions
+
+Show/hide navigation items based on permissions:
+
+```tsx
+// src/components/dashboard/sidebar.tsx
+'use client';
+
+import { useAuth } from '@clerk/nextjs';
+import { useEffect, useState } from 'react';
+import { hasPermission } from '@/lib/auth/permissions';
+import { PERMISSIONS } from '@/constants/permissions';
+import { SidebarLink } from './sidebar-link';
+
+export function Sidebar() {
+  const { userId } = useAuth();
+  const [permissions, setPermissions] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function loadPermissions() {
+      if (!userId) return;
+      
+      // Fetch user permissions
+      const userPermissions = await getUserPermissions(userId);
+      setPermissions(userPermissions);
+    }
+
+    loadPermissions();
+  }, [userId]);
+
+  return (
+    <nav>
+      <SidebarLink href="/dashboard">Dashboard</SidebarLink>
+      
+      {permissions.includes(PERMISSIONS.READ_POSTS) && (
+        <SidebarLink href="/dashboard/posts">Posts</SidebarLink>
+      )}
+      
+      {permissions.includes(PERMISSIONS.MANAGE_USERS) && (
+        <SidebarLink href="/dashboard/users">Users</SidebarLink>
+      )}
+      
+      {permissions.includes(PERMISSIONS.MANAGE_USERS) && (
+        <SidebarLink href="/dashboard/settings">Settings</SidebarLink>
+      )}
+    </nav>
+  );
+}
+```
+
+## Organization-Based Access Control
+
+### Multi-Tenant Access
+
+Implement organization-based access control:
+
+```ts
+// src/lib/auth/organization-access.ts
+import { auth } from '@clerk/nextjs';
+import { db } from '@/db';
+import { organizations, userOrganizations } from '@/db/schema';
+
+export async function getUserOrganizations(userId: string) {
+  return await db
+    .select({
+      id: organizations.id,
+      name: organizations.name,
+      role: userOrganizations.role
+    })
+    .from(userOrganizations)
+    .innerJoin(organizations, eq(userOrganizations.organizationId, organizations.id))
+    .where(eq(userOrganizations.userId, userId));
+}
+
+export async function checkOrganizationAccess(
+  userId: string, 
+  organizationId: string,
+  requiredRole?: string
+) {
+  const userOrg = await db
+    .select()
+    .from(userOrganizations)
+    .where(
+      and(
+        eq(userOrganizations.userId, userId),
+        eq(userOrganizations.organizationId, organizationId)
+      )
+    )
+    .limit(1);
+
+  if (!userOrg.length) {
+    return false;
+  }
+
+  if (requiredRole && userOrg[0].role !== requiredRole) {
+    return false;
+  }
+
+  return true;
+}
+```
+
+## Best Practices
+
+### 1. Principle of Least Privilege
+
+Grant users the minimum permissions necessary to perform their tasks.
+
+### 2. Centralized Permission Management
+
+Keep permission logic in a centralized location for easy maintenance.
+
+### 3. Audit Trails
+
+Log access attempts and permission changes for security monitoring.
+
+### 4. Regular Reviews
+
+Periodically review and update role and permission assignments.
+
+### 5. Secure Defaults
+
+Deny access by default and explicitly grant permissions.
+
+## Common Security Issues
+
+### Privilege Escalation
+
+Prevent users from gaining unauthorized access:
+
+```ts
+// Always validate user input and permissions
+export async function updatePost(postId: number, data: Partial<Post>, userId: string) {
+  // Verify the user owns the post or has admin permissions
+  const post = await db
+    .select()
+    .from(posts)
+    .where(eq(posts.id, postId))
+    .limit(1);
+
+  if (!post.length) {
+    throw new Error('Post not found');
+  }
+
+  const userCanEdit = post[0].userId === userId || 
+    await hasPermission(userId, PERMISSIONS.MANAGE_POSTS);
+
+  if (!userCanEdit) {
+    throw new Error('Forbidden');
+  }
+
+  // Proceed with update
+  return await db
+    .update(posts)
+    .set(data)
+    .where(eq(posts.id, postId))
+    .returning();
+}
+```
+
+### Insecure Direct Object References
+
+Prevent users from accessing objects they don't own:
+
+```ts
+// ❌ Bad - Direct access without validation
+const post = await db.select().from(posts).where(eq(posts.id, postId));
+
+// ✅ Good - Validate ownership
+const post = await db
+  .select()
+  .from(posts)
+  .where(
+    and(
+      eq(posts.id, postId),
+      eq(posts.userId, userId) // Ensure user owns the post
+    )
+  );
+```
+
+## Testing Access Control
+
+### Unit Tests
+
+Test permission logic:
+
+```ts
+// __tests__/permissions.test.ts
+import { hasPermission, ROLE_PERMISSIONS } from '@/constants/permissions';
+import { ROLES } from '@/constants/roles';
+
+describe('Permissions', () => {
+  test('admin should have all permissions', () => {
+    const adminPermissions = ROLE_PERMISSIONS[ROLES.ADMIN];
+    expect(adminPermissions).toEqual(Object.values(PERMISSIONS));
+  });
+
+  test('user should have limited permissions', () => {
+    const userPermissions = ROLE_PERMISSIONS[ROLES.USER];
+    expect(userPermissions).toContain(PERMISSIONS.READ_POSTS);
+    expect(userPermissions).not.toContain(PERMISSIONS.MANAGE_USERS);
+  });
+});
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Content Management"
+  icon="file-text"
+  href="/development/content-management"
+>
+  Learn about managing marketing pages and content
+</Card>
+
+<Card
+  title="Search Engine Optimization"
+  icon="search"
+  href="/development/search-engine-optimization"
+>
+  Optimize your application for search engines
+</Card>
+
+</CardGroup>

@@ -1,0 +1,523 @@
+---
+title: 'Component Development'
+description: 'Learn how to create and customize components in StackForge'
+---
+
+# Component Development
+
+Learn how to create, customize, and extend components in StackForge. This guide covers the component architecture, best practices, and techniques for building reusable UI elements.
+
+## Component Architecture
+
+StackForge follows a component-based architecture that promotes reusability, maintainability, and consistency. Components are organized using the Atomic Design principles and the Container-Component pattern.
+
+### Atomic Design Principles
+
+Components are organized into five distinct levels:
+
+1. **Atoms**: Basic building blocks (buttons, inputs, labels)
+2. **Molecules**: Groups of atoms bonded together (form fields, search bars)
+3. **Organisms**: Groups of molecules joined together (headers, footers, forms)
+4. **Templates**: Page-level layouts that combine organisms
+5. **Pages**: Specific instances of templates with real content
+
+### Container-Component Pattern
+
+StackForge uses the Container-Component pattern to separate concerns:
+
+- **Container Components**: Handle data fetching, state management, and business logic
+- **Presentational Components**: Focus on UI rendering and user interaction
+
+Example:
+```tsx
+// Container Component
+'use client';
+
+import { useEffect, useState } from 'react';
+import { DataTable } from '@/components/dashboard/data-table';
+
+export function AnalyticsContainer() {
+  const [data, setData] = useState([]);
+  
+  useEffect(() => {
+    fetch('/api/analytics')
+      .then(res => res.json())
+      .then(setData);
+  }, []);
+  
+  return <DataTable data={data} />;
+}
+
+// Presentational Component
+interface DataTableProps {
+  data: any[];
+}
+
+export function DataTable({ data }: DataTableProps) {
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Engagement</th>
+          <th>Reach</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.map((row, index) => (
+          <tr key={index}>
+            <td>{row.date}</td>
+            <td>{row.engagement}</td>
+            <td>{row.reach}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+```
+
+## Creating New Components
+
+### Component Location
+
+Place components in the appropriate directory based on their purpose:
+
+- `src/components/ui/`: Reusable UI components (buttons, cards, dialogs)
+- `src/components/global/`: Shared components used across the application
+- `src/components/marketing/`: Marketing page components
+- `src/components/dashboard/`: Dashboard-specific components
+- `src/components/auth/`: Authentication components
+
+### Component Structure
+
+All components should follow this structure:
+
+```tsx
+'use client';
+
+import { cn } from '@/functions/cn';
+
+interface ComponentNameProps {
+  // Define props interface
+}
+
+export function ComponentName({}: ComponentNameProps) {
+  return (
+    <div className={cn('base-classes')}>
+      {/* Component content */}
+    </div>
+  );
+}
+```
+
+### Example: Creating a Custom Button
+
+```tsx
+// src/components/ui/custom-button.tsx
+'use client';
+
+import { Button, type ButtonProps } from '@/components/ui/button';
+import { cn } from '@/functions/cn';
+
+interface CustomButtonProps extends ButtonProps {
+  variant?: 'primary' | 'secondary' | 'destructive';
+}
+
+export function CustomButton({
+  className,
+  variant = 'primary',
+  ...props
+}: CustomButtonProps) {
+  return (
+    <Button
+      className={cn(
+        'transition-all duration-200',
+        variant === 'primary' && 'bg-primary hover:bg-primary/90',
+        variant === 'secondary' && 'bg-secondary hover:bg-secondary/90',
+        variant === 'destructive' && 'bg-destructive hover:bg-destructive/90',
+        className
+      )}
+      {...props}
+    />
+  );
+}
+```
+
+## Using shadcn/ui Components
+
+StackForge includes shadcn/ui components that can be customized and extended.
+
+### Installing New shadcn/ui Components
+
+To add new shadcn/ui components:
+
+```bash
+# Using the shadcn/ui CLI (if installed)
+npx shadcn-ui@latest add button
+
+# Or manually copy from the shadcn/ui documentation
+```
+
+### Customizing shadcn/ui Components
+
+Customize shadcn/ui components by extending their classes:
+
+```tsx
+import { Button } from '@/components/ui/button';
+
+export function CustomizedButton() {
+  return (
+    <Button 
+      className="bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+      size="lg"
+    >
+      Gradient Button
+    </Button>
+  );
+}
+```
+
+## Styling Components
+
+### Tailwind CSS
+
+StackForge uses Tailwind CSS for styling. Apply classes directly to components:
+
+```tsx
+export function Card() {
+  return (
+    <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+      <div className="p-6">
+        <h3 className="text-2xl font-semibold leading-none tracking-tight">
+          Card Title
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Card description
+        </p>
+      </div>
+    </div>
+  );
+}
+```
+
+### Using cn() Utility
+
+The `cn()` utility helps merge Tailwind classes conditionally:
+
+```tsx
+import { cn } from '@/functions/cn';
+
+interface AlertProps {
+  variant?: 'default' | 'destructive';
+  className?: string;
+}
+
+export function Alert({ variant = 'default', className }: AlertProps) {
+  return (
+    <div
+      className={cn(
+        'rounded-lg border p-4',
+        variant === 'default' && 'bg-background text-foreground',
+        variant === 'destructive' && 'bg-destructive text-destructive-foreground',
+        className
+      )}
+    >
+      {/* Alert content */}
+    </div>
+  );
+}
+```
+
+### CSS Variables
+
+Use CSS variables for consistent theming:
+
+```css
+/* src/styles/globals.css */
+:root {
+  --primary: 221 83% 53%;
+  --primary-foreground: 0 0% 98%;
+}
+
+.dark {
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 98%;
+}
+```
+
+```tsx
+// Using CSS variables in components
+<div className="bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]" />
+```
+
+## Component Composition
+
+Build complex UIs by composing simpler components:
+
+```tsx
+// src/components/dashboard/analytics-card.tsx
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { BarChart } from '@/components/ui/chart';
+
+interface AnalyticsCardProps {
+  title: string;
+  data: any[];
+}
+
+export function AnalyticsCard({ title, data }: AnalyticsCardProps) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <BarChart data={data} />
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+## State Management in Components
+
+### Local State
+
+Use React's useState hook for local component state:
+
+```tsx
+'use client';
+
+import { useState } from 'react';
+
+export function Counter() {
+  const [count, setCount] = useState(0);
+  
+  return (
+    <div>
+      <p>Count: {count}</p>
+      <button onClick={() => setCount(count + 1)}>
+        Increment
+      </button>
+    </div>
+  );
+}
+```
+
+### Global State
+
+Use React Context for global state management:
+
+```tsx
+// src/components/global/providers.tsx
+'use client';
+
+import { createContext, useContext, useState } from 'react';
+
+type ThemeContextType = {
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
+};
+
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  
+  const toggleTheme = () => {
+    setTheme(theme === 'light' ? 'dark' : 'light');
+  };
+  
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+export function useTheme() {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+}
+```
+
+## Component Testing
+
+### Writing Component Tests
+
+Create test files alongside components:
+
+```tsx
+// src/components/ui/button.test.tsx
+import { render, screen } from '@testing-library/react';
+import { Button } from '@/components/ui/button';
+
+describe('Button', () => {
+  it('renders with correct text', () => {
+    render(<Button>Click me</Button>);
+    expect(screen.getByText('Click me')).toBeInTheDocument();
+  });
+  
+  it('handles click events', () => {
+    const handleClick = jest.fn();
+    render(<Button onClick={handleClick}>Click me</Button>);
+    
+    screen.getByText('Click me').click();
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+});
+```
+
+### Testing Best Practices
+
+1. Test component rendering
+2. Test user interactions
+3. Test different prop combinations
+4. Test accessibility attributes
+
+## Performance Optimization
+
+### Memoization
+
+Use React.memo for performance optimization:
+
+```tsx
+import { memo } from 'react';
+
+interface UserCardProps {
+  name: string;
+  email: string;
+}
+
+export const UserCard = memo(function UserCard({ name, email }: UserCardProps) {
+  return (
+    <div className="border p-4 rounded">
+      <h3>{name}</h3>
+      <p>{email}</p>
+    </div>
+  );
+});
+```
+
+### Lazy Loading
+
+Use dynamic imports for code splitting:
+
+```tsx
+import dynamic from 'next/dynamic';
+
+const HeavyChart = dynamic(() => import('@/components/dashboard/heavy-chart'), {
+  loading: () => <p>Loading chart...</p>,
+  ssr: false,
+});
+```
+
+## Accessibility
+
+### ARIA Attributes
+
+Include appropriate ARIA attributes:
+
+```tsx
+export function Modal({ isOpen, onClose, children }: ModalProps) {
+  if (!isOpen) return null;
+  
+  return (
+    <div 
+      role="dialog" 
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
+      <button 
+        onClick={onClose}
+        aria-label="Close modal"
+      >
+        ×
+      </button>
+      {children}
+    </div>
+  );
+}
+```
+
+### Semantic HTML
+
+Use semantic HTML elements:
+
+```tsx
+export function Navigation() {
+  return (
+    <nav>
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/about">About</a></li>
+      </ul>
+    </nav>
+  );
+}
+```
+
+## Best Practices
+
+### Component Design
+
+1. Keep components small and focused
+2. Use TypeScript for type safety
+3. Follow naming conventions
+4. Write clear prop interfaces
+5. Include JSDoc comments for complex components
+
+### Reusability
+
+1. Make components configurable through props
+2. Avoid hardcoding values
+3. Use composition over inheritance
+4. Extract common patterns into reusable components
+
+### Maintenance
+
+1. Keep components up to date
+2. Remove unused components
+3. Document complex components
+4. Follow consistent styling patterns
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Props not updating**: Check that props are properly passed and updated
+2. **Styling not applying**: Verify Tailwind classes are correct and not conflicting
+3. **State not updating**: Ensure state setters are called correctly
+4. **Component not rendering**: Check for conditional rendering logic
+
+### Debugging Components
+
+1. Use React DevTools to inspect component hierarchy
+2. Add console.log statements to trace data flow
+3. Check browser console for errors
+4. Verify component imports are correct
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="API Development"
+  icon="terminal"
+  href="/development/api-development"
+>
+  Learn how to build and extend API endpoints
+</Card>
+
+<Card
+  title="Database Management"
+  icon="database"
+  href="/development/database-management"
+>
+  Learn how to work with the database schema and migrations
+</Card>
+
+</CardGroup>

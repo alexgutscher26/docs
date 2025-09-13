@@ -1,0 +1,468 @@
+---
+title: 'Database Management'
+description: 'Learn how to work with the database schema and migrations in StackForge'
+---
+
+# Database Management
+
+Learn how to work with the database schema, migrations, and data management in StackForge. This guide covers Drizzle ORM usage, schema definition, migrations, and best practices for database management.
+
+## Database Architecture
+
+StackForge uses Drizzle ORM with PostgreSQL as the database backend. The database configuration and schema are organized in the `src/db/` directory.
+
+### Directory Structure
+
+```
+src/db/
+├── schema/          # Drizzle schema definitions
+│   ├── index.ts     # Schema exports
+│   ├── user.ts      # User table schema
+│   └── post.ts      # Post table schema
+├── index.ts         # Database client configuration
+└── migrations/      # Database migrations (generated)
+```
+
+### Drizzle ORM Configuration
+
+The database client is configured in `src/db/index.ts`:
+
+```ts
+// src/db/index.ts
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import * as schema from './schema';
+
+const client = postgres(process.env.DATABASE_URL!);
+export const db = drizzle(client, { schema });
+```
+
+## Schema Definition
+
+### Defining Tables
+
+Define database tables using Drizzle ORM schema:
+
+```ts
+// src/db/schema/user.ts
+import { pgTable, serial, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  name: text('name'),
+  email: text('email').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  emailIndex: uniqueIndex('email_idx').on(table.email),
+}));
+```
+
+### Relationships
+
+Define relationships between tables:
+
+```ts
+// src/db/schema/post.ts
+import { pgTable, serial, text, integer, timestamp } from 'drizzle-orm/pg-core';
+import { users } from './user';
+
+export const posts = pgTable('posts', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  content: text('content'),
+  userId: integer('user_id').references(() => users.id),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+```
+
+### Schema Exports
+
+Export all schemas in `src/db/schema/index.ts`:
+
+```ts
+// src/db/schema/index.ts
+export * from './user';
+export * from './post';
+```
+
+## Database Migrations
+
+### Generating Migrations
+
+Generate migrations when you modify the schema:
+
+```bash
+bun run db:generate
+```
+
+This command compares your schema with the database and generates migration files in the `drizzle/` directory.
+
+### Applying Migrations
+
+Apply migrations to update the database:
+
+```bash
+bun run db:migrate
+```
+
+This command applies pending migrations to the database.
+
+### Pushing Schema Changes
+
+For development, you can push schema changes directly:
+
+```bash
+bun run db:push
+```
+
+This command pushes schema changes directly to the database without generating migration files.
+
+### Viewing Migration Status
+
+Check the status of migrations:
+
+```bash
+bun run db:status
+```
+
+This command shows which migrations have been applied and which are pending.
+
+## Working with Data
+
+### Querying Data
+
+Query data using Drizzle ORM:
+
+```ts
+import { db } from '@/db';
+import { users, posts } from '@/db/schema';
+import { eq, desc, and } from 'drizzle-orm';
+
+// Find all users
+const allUsers = await db.query.users.findMany();
+
+// Find a user by ID
+const user = await db.query.users.findFirst({
+  where: eq(users.id, 1),
+});
+
+// Find users with posts
+const usersWithPosts = await db.query.users.findMany({
+  with: {
+    posts: true,
+  },
+});
+
+// Find posts with authors
+const postsWithAuthors = await db.query.posts.findMany({
+  with: {
+    user: true,
+  },
+  orderBy: [desc(posts.createdAt)],
+});
+```
+
+### Inserting Data
+
+Insert data into tables:
+
+```ts
+import { db } from '@/db';
+import { users } from '@/db/schema';
+
+// Insert a single record
+const newUser = await db.insert(users).values({
+  name: 'John Doe',
+  email: 'john@example.com',
+}).returning();
+
+// Insert multiple records
+const newUsers = await db.insert(users).values([
+  { name: 'John Doe', email: 'john@example.com' },
+  { name: 'Jane Smith', email: 'jane@example.com' },
+]).returning();
+```
+
+### Updating Data
+
+Update existing records:
+
+```ts
+import { db } from '@/db';
+import { users } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+
+// Update a single record
+const updatedUser = await db.update(users)
+  .set({ name: 'John Smith' })
+  .where(eq(users.id, 1))
+  .returning();
+
+// Update multiple records
+await db.update(users)
+  .set({ updatedAt: new Date() })
+  .where(eq(users.active, true));
+```
+
+### Deleting Data
+
+Delete records from tables:
+
+```ts
+import { db } from '@/db';
+import { users } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+
+// Delete a single record
+await db.delete(users).where(eq(users.id, 1));
+
+// Delete multiple records
+await db.delete(users).where(eq(users.active, false));
+```
+
+## Database Seeding
+
+### Creating Seed Scripts
+
+Create seed scripts in the `scripts/` directory:
+
+```ts
+// scripts/seed.ts
+import { db } from '@/db';
+import { users, posts } from '@/db/schema';
+
+async function seed() {
+  // Insert sample users
+  const sampleUsers = await db.insert(users).values([
+    { name: 'Alice Johnson', email: 'alice@example.com' },
+    { name: 'Bob Smith', email: 'bob@example.com' },
+    { name: 'Carol Davis', email: 'carol@example.com' },
+  ]).returning();
+  
+  // Insert sample posts
+  const samplePosts = await db.insert(posts).values([
+    { title: 'First Post', content: 'This is the first post', userId: sampleUsers[0].id },
+    { title: 'Second Post', content: 'This is the second post', userId: sampleUsers[1].id },
+    { title: 'Third Post', content: 'This is the third post', userId: sampleUsers[2].id },
+  ]).returning();
+  
+  console.log('Seed data inserted successfully');
+}
+
+seed().catch((error) => {
+  console.error('Error seeding database:', error);
+  process.exit(1);
+});
+```
+
+### Running Seed Scripts
+
+Run seed scripts to populate the database with sample data:
+
+```bash
+bun run db:seed
+```
+
+## Database Studio
+
+### Using Drizzle Studio
+
+Drizzle Studio provides a web interface for database management:
+
+```bash
+bun run db:studio
+```
+
+This command starts Drizzle Studio, which you can access at `http://localhost:4983`.
+
+### Features of Drizzle Studio
+
+1. **Schema Browser**: View table schemas and relationships
+2. **Data Editor**: Edit data directly in the browser
+3. **Query Runner**: Execute SQL queries
+4. **Migration Manager**: View and manage migrations
+
+## Environment Configuration
+
+### Database URL
+
+Configure the database connection using the `DATABASE_URL` environment variable:
+
+```env
+# .env.local
+DATABASE_URL=postgresql://username:password@localhost:5432/database_name
+```
+
+### Connection Pooling
+
+For production, consider using connection pooling:
+
+```ts
+// src/db/index.ts
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import * as schema from './schema';
+
+const client = postgres(process.env.DATABASE_URL!, {
+  max: 20, // Maximum number of connections
+  idle_timeout: 20, // Close idle connections after 20 seconds
+  max_lifetime: 60 * 60, // Close connections after 1 hour
+});
+
+export const db = drizzle(client, { schema });
+```
+
+## Best Practices
+
+### Schema Design
+
+1. **Use descriptive table and column names**
+2. **Define appropriate data types**
+3. **Add indexes for frequently queried columns**
+4. **Use foreign key constraints for relationships**
+5. **Include timestamps for audit trails**
+
+### Migration Management
+
+1. **Generate migrations for all schema changes**
+2. **Review migration files before applying**
+3. **Test migrations in development first**
+4. **Backup production data before applying migrations**
+5. **Use version control for migration files**
+
+### Query Optimization
+
+1. **Use indexes for frequently queried columns**
+2. **Limit the number of records returned**
+3. **Use pagination for large datasets**
+4. **Avoid N+1 query problems**
+5. **Use eager loading for related data**
+
+### Security
+
+1. **Use parameterized queries to prevent SQL injection**
+2. **Validate and sanitize input data**
+3. **Use environment variables for database credentials**
+4. **Implement proper access controls**
+5. **Regularly update database software**
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Connection errors**: Check database URL and credentials
+2. **Migration conflicts**: Resolve conflicts manually or regenerate migrations
+3. **Schema mismatches**: Ensure schema matches database structure
+4. **Performance issues**: Add indexes or optimize queries
+5. **Permission errors**: Check database user permissions
+
+### Debugging Database Issues
+
+1. **Check database logs for error messages**
+2. **Verify database connectivity**
+3. **Review migration files for syntax errors**
+4. **Test queries directly in Drizzle Studio**
+5. **Check environment variables are properly configured**
+
+### Migration Troubleshooting
+
+1. **Rollback failed migrations**:
+   ```bash
+   bun run db:migrate:down
+   ```
+
+2. **Reset database** (development only):
+   ```bash
+   bun run db:reset
+   ```
+
+3. **Check migration status**:
+   ```bash
+   bun run db:status
+   ```
+
+## Advanced Features
+
+### Transactions
+
+Use transactions for atomic operations:
+
+```ts
+import { db } from '@/db';
+import { users, posts } from '@/db/schema';
+
+await db.transaction(async (tx) => {
+  try {
+    // Create user
+    const newUser = await tx.insert(users).values({
+      name: 'John Doe',
+      email: 'john@example.com',
+    }).returning();
+    
+    // Create post for user
+    await tx.insert(posts).values({
+      title: 'Welcome Post',
+      content: 'Welcome to our platform!',
+      userId: newUser[0].id,
+    });
+    
+    // Commit transaction
+  } catch (error) {
+    // Rollback transaction
+    throw error;
+  }
+});
+```
+
+### Custom Queries
+
+Execute custom SQL queries when needed:
+
+```ts
+import { sql } from 'drizzle-orm';
+
+const result = await db.execute(
+  sql`SELECT * FROM users WHERE created_at > ${someDate}`
+);
+```
+
+### Raw SQL
+
+Use raw SQL for complex queries:
+
+```ts
+import { sql } from 'drizzle-orm';
+
+const complexQuery = await db.execute(sql`
+  SELECT u.name, COUNT(p.id) as post_count
+  FROM users u
+  LEFT JOIN posts p ON u.id = p.user_id
+  GROUP BY u.id, u.name
+  ORDER BY post_count DESC
+  LIMIT 10
+`);
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Testing"
+  icon="test-tube"
+  href="/development/testing"
+>
+  Learn how to write and run tests for your application
+</Card>
+
+<Card
+  title="Debugging"
+  icon="bug"
+  href="/development/debugging"
+>
+  Learn how to troubleshoot common development issues
+</Card>
+
+</CardGroup>

@@ -1,0 +1,322 @@
+---
+title: 'Approaching Local Development'
+description: 'Set up your local development environment for StackForge'
+---
+
+# Approaching Local Development
+
+Setting up a proper local development environment is crucial for productive development with StackForge. This guide will walk you through the process of configuring your local environment, understanding the development workflow, and optimizing your setup for maximum productivity.
+
+## Development Environment Setup
+
+### Prerequisites
+
+Before setting up your local development environment, ensure you have the following installed:
+
+- Node.js version 18 or higher
+- Bun package manager
+- PostgreSQL database instance (local or cloud)
+- Clerk account for authentication
+
+### Installing Bun
+
+StackForge uses Bun as its package manager and runtime. If you don't have Bun installed, follow these steps:
+
+```bash
+# Install Bun
+curl -fsSL https://bun.sh/install | bash
+
+# Verify installation
+bun --version
+```
+
+### Cloning the Repository
+
+Clone the StackForge repository to your local machine:
+
+```bash
+git clone https://github.com/Shreyas-29/StackForge-ai.git
+cd StackForge-ai
+```
+
+### Installing Dependencies
+
+Install the project dependencies using Bun:
+
+```bash
+bun install
+```
+
+This will install all the required dependencies listed in the `package.json` file.
+
+## Environment Configuration
+
+### Creating Environment Variables
+
+Create a `.env.local` file in the root directory of your project:
+
+```bash
+cp .env.example .env.local
+```
+
+### Configuring Environment Variables
+
+Edit the `.env.local` file to configure your environment variables:
+
+```env
+# App Configuration
+NEXT_PUBLIC_APP_NAME=StackForge
+NEXT_PUBLIC_APP_DOMAIN=http://localhost:3000
+
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/stackforge
+
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_XXXXXXXXXXXXXXXXXXXXXXXX
+CLERK_SECRET_KEY=sk_test_XXXXXXXXXXXXXXXXXXXXXXXX
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/auth/signin
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/auth/signup
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_URL=/
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_URL=/
+```
+
+Make sure to replace the placeholder values with your actual configuration.
+
+### Validating Environment Variables
+
+Validate your environment variables to ensure they are correctly configured:
+
+```bash
+bun run env:validate
+```
+
+This will check that all required environment variables are present and in the correct format.
+
+## Database Setup
+
+### Setting up PostgreSQL
+
+You can set up PostgreSQL locally or use a cloud provider like Supabase or Railway.
+
+For local development with Docker:
+
+```bash
+# Run PostgreSQL in Docker
+docker run -d \
+  --name stackforge-db \
+  -e POSTGRES_DB=stackforge \
+  -e POSTGRES_USER=stackforge \
+  -e POSTGRES_PASSWORD=stackforge \
+  -p 5432:5432 \
+  postgres:15
+```
+
+### Configuring Database Connection
+
+Update your `DATABASE_URL` in the `.env.local` file:
+
+```env
+DATABASE_URL=postgresql://stackforge:stackforge@localhost:5432/stackforge
+```
+
+### Running Database Migrations
+
+Push the schema to your database:
+
+```bash
+bun run db:push
+```
+
+### Seeding the Database (Optional)
+
+Populate your database with sample data for testing:
+
+```bash
+bun run db:seed
+```
+
+## Starting the Development Server
+
+Start the Next.js development server:
+
+```bash
+bun run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser to see your StackForge application running!
+
+The development server will automatically reload when you make changes to the code.
+
+## Development Workflow
+
+### File Structure
+
+Understand the project structure to navigate and modify files effectively:
+
+```
+src/
+├── app/                 # Next.js app router pages
+│   ├── (main)/          # Main application pages
+│   ├── (marketing)/     # Marketing pages
+│   ├── auth/            # Authentication pages
+│   └── layout.tsx       # Root layout
+├── components/          # React components
+│   ├── auth/            # Authentication components
+│   ├── dashboard/       # Dashboard components
+│   ├── global/          # Global components
+│   ├── marketing/       # Marketing components
+│   └── ui/              # UI components
+├── constants/           # Application constants
+├── db/                  # Database configuration and schema
+│   ├── schema/          # Drizzle schema definitions
+│   └── index.ts         # Database client configuration
+├── functions/           # Utility functions
+├── hooks/              # Custom React hooks
+├── lib/                # Library configurations
+├── schema/             # Validation schemas
+└── styles/             # Global styles
+```
+
+### Making Changes
+
+1. **Frontend Changes**: Modify files in `src/app/` and `src/components/`
+2. **Backend Changes**: Modify files in `src/db/` and API routes in `src/app/api/`
+3. **Configuration Changes**: Modify files in `src/constants/` and `src/lib/`
+
+### Hot Reloading
+
+Next.js provides hot reloading, which means your changes will be reflected in the browser automatically without needing to restart the server.
+
+## Development Tools
+
+### Code Editor
+
+We recommend using VS Code with the following extensions:
+
+- **ESLint**: For JavaScript/TypeScript linting
+- **Prettier**: For code formatting
+- **Tailwind CSS IntelliSense**: For Tailwind CSS autocomplete
+- **GitLens**: For enhanced Git capabilities
+
+### Browser Developer Tools
+
+Use your browser's developer tools for:
+
+- Debugging JavaScript/TypeScript code
+- Inspecting HTML/CSS
+- Monitoring network requests
+- Profiling performance
+
+### Database Management
+
+Use Drizzle Studio for database management:
+
+```bash
+bun run db:studio
+```
+
+This will open a web interface for managing your database.
+
+## Common Development Tasks
+
+### Adding a New Page
+
+1. Create a new directory in `src/app/`
+2. Add a `page.tsx` file with your page content
+3. Add any necessary components in `src/components/`
+
+### Adding a New Component
+
+1. Create a new file in the appropriate directory in `src/components/`
+2. Export the component
+3. Import and use the component in your pages
+
+### Adding a New API Route
+
+1. Create a new directory in `src/app/api/`
+2. Add a `route.ts` file with your API logic
+3. Test the API endpoint
+
+### Modifying the Database Schema
+
+1. Update files in `src/db/schema/`
+2. Generate migrations: `bun run db:generate`
+3. Apply migrations: `bun run db:migrate`
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Dependencies not installing**: Ensure Bun is properly installed and try `bun install` again
+2. **Environment variables not loading**: Check that your `.env.local` file is in the root directory
+3. **Database connection issues**: Verify your `DATABASE_URL` and ensure PostgreSQL is running
+4. **Clerk authentication errors**: Check your Clerk API keys and domain settings
+
+### Debugging Tips
+
+1. Check the terminal for error messages
+2. Use `console.log` statements for debugging
+3. Check the browser console for frontend errors
+4. Use the React Developer Tools browser extension
+
+## Performance Optimization
+
+### Development Mode vs Production Mode
+
+During development, Next.js optimizes for developer experience rather than performance. For production builds, run:
+
+```bash
+bun run build
+```
+
+### Monitoring Performance
+
+Use the following tools to monitor performance:
+
+- **Next.js Built-in Analytics**: Provides performance metrics
+- **Browser Performance Tools**: For profiling page load times
+- **Lighthouse**: For comprehensive performance audits
+
+## Best Practices
+
+### Code Organization
+
+1. Follow the existing project structure
+2. Use meaningful file and directory names
+3. Keep components small and focused
+4. Use TypeScript for type safety
+
+### Git Workflow
+
+1. Create feature branches for new work
+2. Write descriptive commit messages
+3. Push changes regularly
+4. Create pull requests for code review
+
+### Testing
+
+1. Test your changes locally before committing
+2. Run the test suite: `bun run test`
+3. Check for linting errors: `bun run lint`
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Project Structure"
+  icon="folder-tree"
+  href="/development/project-structure"
+>
+  Learn about the StackForge project organization
+</Card>
+
+<Card
+  title="Component Development"
+  icon="component"
+  href="/development/component-development"
+>
+  Learn how to create and customize components
+</Card>
+
+</CardGroup>

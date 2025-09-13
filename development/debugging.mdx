@@ -1,0 +1,640 @@
+---
+title: 'Debugging'
+description: 'Learn how to troubleshoot common development issues in StackForge'
+---
+
+# Debugging
+
+Learn how to troubleshoot common development issues in StackForge. This guide covers debugging techniques, tools, and best practices for identifying and resolving problems in your application.
+
+## Debugging Tools
+
+### Browser Developer Tools
+
+Modern browsers provide powerful debugging tools:
+
+1. **Console**: View logs, errors, and warnings
+2. **Sources**: Set breakpoints and step through code
+3. **Network**: Monitor API requests and responses
+4. **Elements**: Inspect and modify HTML/CSS
+5. **Performance**: Analyze page load and runtime performance
+
+### React Developer Tools
+
+Install the React Developer Tools browser extension:
+
+1. **Components Tab**: Inspect React component tree
+2. **Profiler Tab**: Analyze component performance
+3. **Props and State**: View component props and state
+4. **Hooks**: Inspect React Hook values
+
+### Node.js Debugging
+
+For server-side debugging, use Node.js debugging tools:
+
+1. **Node Inspector**: Built-in debugger
+2. **Chrome DevTools**: Attach to Node.js processes
+3. **VS Code Debugger**: Integrated debugging in VS Code
+
+## Common Debugging Techniques
+
+### Console Logging
+
+Use console.log statements for quick debugging:
+
+```tsx
+// src/components/dashboard/analytics-chart.tsx
+'use client';
+
+import { useEffect, useState } from 'react';
+
+export function AnalyticsChart() {
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    console.log('Fetching analytics data...');
+    
+    fetch('/api/analytics')
+      .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+      })
+      .then(fetchedData => {
+        console.log('Fetched data:', fetchedData);
+        setData(fetchedData);
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error('Error fetching data:', error);
+        setLoading(false);
+      });
+  }, []);
+  
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  
+  return (
+    <div>
+      {/* Chart implementation */}
+      <pre>{JSON.stringify(data, null, 2)}</pre>
+    </div>
+  );
+}
+```
+
+### Browser Breakpoints
+
+Set breakpoints in browser developer tools:
+
+1. Open Developer Tools (F12)
+2. Go to the Sources tab
+3. Find your source file
+4. Click on the line number to set a breakpoint
+5. Refresh the page to trigger the breakpoint
+6. Use the debugger controls to step through code
+
+### React Error Boundaries
+
+Implement error boundaries to catch and handle errors:
+
+```tsx
+// src/components/global/error-boundary.tsx
+'use client';
+
+import { Component, ErrorInfo, ReactNode } from 'react';
+
+interface Props {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+interface State {
+  hasError: boolean;
+}
+
+export class ErrorBoundary extends Component<Props, State> {
+  public state: State = {
+    hasError: false,
+  };
+
+  public static getDerivedStateFromError(_: Error): State {
+    return { hasError: true };
+  }
+
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('Uncaught error:', error, errorInfo);
+  }
+
+  public render() {
+    if (this.state.hasError) {
+      return this.props.fallback || <h1>Something went wrong.</h1>;
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+## Debugging Server-Side Code
+
+### API Route Debugging
+
+Debug API routes using console.log and error handling:
+
+```ts
+// src/app/api/posts/route.ts
+import { NextResponse } from 'next/server';
+import { db } from '@/db';
+import { posts } from '@/db/schema';
+
+export async function GET(request: Request) {
+  try {
+    console.log('Fetching posts...');
+    
+    const url = new URL(request.url);
+    const limit = parseInt(url.searchParams.get('limit') || '10');
+    console.log('Limit:', limit);
+    
+    const allPosts = await db.query.posts.findMany({
+      limit,
+    });
+    
+    console.log('Fetched', allPosts.length, 'posts');
+    
+    return NextResponse.json(allPosts);
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    
+    return NextResponse.json(
+      { error: 'Failed to fetch posts' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+### Database Debugging
+
+Debug database operations with logging:
+
+```ts
+// src/db/index.ts
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import * as schema from './schema';
+
+const client = postgres(process.env.DATABASE_URL!, {
+  onnotice: (notice) => {
+    console.log('Database notice:', notice);
+  },
+});
+
+// Enable query logging in development
+const db = drizzle(client, { 
+  schema,
+  logger: process.env.NODE_ENV === 'development',
+});
+
+export { db };
+```
+
+## Debugging Client-Side Issues
+
+### State Management Debugging
+
+Debug React state and context:
+
+```tsx
+// src/components/dashboard/dashboard-provider.tsx
+'use client';
+
+import { createContext, useContext, useState, useEffect } from 'react';
+
+interface DashboardContextType {
+  data: any[];
+  loading: boolean;
+  error: string | null;
+  refreshData: () => void;
+}
+
+const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
+
+export function DashboardProvider({ children }: { children: React.ReactNode }) {
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const refreshData = async () => {
+    try {
+      console.log('Refreshing data...');
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch('/api/dashboard');
+      const result = await response.json();
+      
+      console.log('Data refreshed:', result);
+      setData(result);
+    } catch (err) {
+      console.error('Error refreshing data:', err);
+      setError('Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    refreshData();
+  }, []);
+  
+  // Debug context values
+  useEffect(() => {
+    console.log('Dashboard context updated:', { data, loading, error });
+  }, [data, loading, error]);
+  
+  return (
+    <DashboardContext.Provider value={{ data, loading, error, refreshData }}>
+      {children}
+    </DashboardContext.Provider>
+  );
+}
+
+export function useDashboard() {
+  const context = useContext(DashboardContext);
+  if (!context) {
+    throw new Error('useDashboard must be used within a DashboardProvider');
+  }
+  return context;
+}
+```
+
+### Event Handling Debugging
+
+Debug event handlers and user interactions:
+
+```tsx
+// src/components/ui/custom-button.tsx
+'use client';
+
+import { Button, type ButtonProps } from '@/components/ui/button';
+
+interface CustomButtonProps extends ButtonProps {
+  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+}
+
+export function CustomButton({ onClick, children, ...props }: CustomButtonProps) {
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    console.log('Button clicked:', {
+      event,
+      target: event.target,
+      timestamp: new Date().toISOString(),
+    });
+    
+    // Call the original onClick handler
+    onClick?.(event);
+  };
+  
+  return (
+    <Button onClick={handleClick} {...props}>
+      {children}
+    </Button>
+  );
+}
+```
+
+## Performance Debugging
+
+### Network Request Debugging
+
+Debug network requests and API calls:
+
+```tsx
+// src/hooks/use-api.ts
+'use client';
+
+import { useState, useEffect } from 'react';
+
+interface UseApiOptions {
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  body?: any;
+}
+
+export function useApi<T>(url: string, options: UseApiOptions = {}) {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log('Making API request:', {
+          url,
+          method: options.method || 'GET',
+          body: options.body,
+        });
+        
+        const startTime = performance.now();
+        
+        const response = await fetch(url, {
+          method: options.method || 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: options.body ? JSON.stringify(options.body) : undefined,
+        });
+        
+        const endTime = performance.now();
+        console.log('API response time:', endTime - startTime, 'ms');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('API response:', result);
+        
+        setData(result);
+      } catch (err) {
+        console.error('API error:', err);
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [url]);
+  
+  return { data, loading, error };
+}
+```
+
+### Memory Leak Debugging
+
+Debug memory leaks and performance issues:
+
+```tsx
+// src/hooks/use-memory-debug.ts
+'use client';
+
+import { useEffect } from 'react';
+
+export function useMemoryDebug(componentName: string) {
+  useEffect(() => {
+    console.log(`${componentName} mounted`);
+    
+    return () => {
+      console.log(`${componentName} unmounted`);
+      
+      // Check for potential memory leaks
+      if (typeof window !== 'undefined') {
+        console.log('Active timers:', Object.keys(window).filter(key => 
+          key.startsWith('setInterval') || key.startsWith('setTimeout')
+        ));
+      }
+    };
+  }, [componentName]);
+}
+```
+
+## Environment-Specific Debugging
+
+### Development vs Production
+
+Debug differently in development and production:
+
+```ts
+// src/lib/debug.ts
+export const isDevelopment = process.env.NODE_ENV === 'development';
+
+export function debugLog(...args: any[]) {
+  if (isDevelopment) {
+    console.log('[DEBUG]', ...args);
+  }
+}
+
+export function debugError(...args: any[]) {
+  if (isDevelopment) {
+    console.error('[DEBUG ERROR]', ...args);
+  }
+}
+```
+
+### Environment Variable Debugging
+
+Debug environment variable issues:
+
+```ts
+// src/lib/env-debug.ts
+export function debugEnv() {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Environment variables:');
+    console.log('NEXT_PUBLIC_APP_NAME:', process.env.NEXT_PUBLIC_APP_NAME);
+    console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+    console.log('CLERK_PUBLISHABLE_KEY:', process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? 'SET' : 'NOT SET');
+  }
+}
+
+// Call this in your app initialization
+debugEnv();
+```
+
+## Error Handling and Monitoring
+
+### Custom Error Logging
+
+Implement custom error logging:
+
+```ts
+// src/lib/logger.ts
+export class Logger {
+  static info(message: string, data?: any) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[INFO] ${message}`, data);
+    }
+  }
+  
+  static warn(message: string, data?: any) {
+    console.warn(`[WARN] ${message}`, data);
+  }
+  
+  static error(message: string, error?: any) {
+    console.error(`[ERROR] ${message}`, error);
+    
+    // In production, send to error tracking service
+    if (process.env.NODE_ENV === 'production') {
+      // Send to Sentry, LogRocket, etc.
+    }
+  }
+}
+```
+
+### Error Boundaries with Context
+
+Create error boundaries with context for better error handling:
+
+```tsx
+// src/components/global/error-handler.tsx
+'use client';
+
+import { createContext, useContext, useState, ReactNode } from 'react';
+import { Logger } from '@/lib/logger';
+
+interface ErrorContextType {
+  errors: string[];
+  addError: (error: string) => void;
+  clearErrors: () => void;
+}
+
+const ErrorContext = createContext<ErrorContextType | undefined>(undefined);
+
+export function ErrorProvider({ children }: { children: ReactNode }) {
+  const [errors, setErrors] = useState<string[]>([]);
+  
+  const addError = (error: string) => {
+    Logger.error('Application error', error);
+    setErrors(prev => [...prev, error]);
+  };
+  
+  const clearErrors = () => {
+    setErrors([]);
+  };
+  
+  return (
+    <ErrorContext.Provider value={{ errors, addError, clearErrors }}>
+      {children}
+    </ErrorContext.Provider>
+  );
+}
+
+export function useError() {
+  const context = useContext(ErrorContext);
+  if (!context) {
+    throw new Error('useError must be used within an ErrorProvider');
+  }
+  return context;
+}
+```
+
+## Debugging Tools and Extensions
+
+### VS Code Debugging
+
+Configure debugging in VS Code:
+
+```json
+// .vscode/launch.json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Next.js: debug server-side",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev",
+      "serverReadyAction": {
+        "pattern": "started server on .+, url: (.+)",
+        "uriFormat": "%s",
+        "action": "debugWithChrome"
+      }
+    }
+  ]
+}
+```
+
+### Chrome DevTools Node.js Debugging
+
+Debug Node.js processes with Chrome DevTools:
+
+```bash
+# Start Next.js with inspect flag
+NODE_OPTIONS='--inspect' bun run dev
+```
+
+Then open `chrome://inspect` in Chrome to connect to the debugger.
+
+## Best Practices
+
+### Debugging Strategy
+
+1. **Start with the console**: Check for obvious errors
+2. **Reproduce the issue**: Create consistent reproduction steps
+3. **Isolate the problem**: Narrow down the source of the issue
+4. **Use debugging tools**: Leverage browser and IDE debugging features
+5. **Add logging**: Insert strategic log statements
+6. **Test fixes**: Verify that your solution resolves the issue
+
+### Preventive Debugging
+
+1. **Implement proper error handling**
+2. **Use TypeScript for type safety**
+3. **Write comprehensive tests**
+4. **Monitor application performance**
+5. **Use linting tools**
+6. **Implement logging**
+
+### Debugging in Production
+
+1. **Use error tracking services** (Sentry, LogRocket)
+2. **Implement structured logging**
+3. **Monitor performance metrics**
+4. **Set up alerts for critical errors**
+5. **Use feature flags for safe rollouts**
+6. **Implement proper monitoring**
+
+## Troubleshooting Common Issues
+
+### React Issues
+
+1. **Component not re-rendering**: Check state updates and memoization
+2. **Props not updating**: Verify prop passing and parent component state
+3. **Hooks errors**: Ensure hooks are called at the top level
+4. **Context issues**: Check provider placement and context values
+
+### API Issues
+
+1. **CORS errors**: Check CORS headers and origin configuration
+2. **404 errors**: Verify API route paths
+3. **500 errors**: Check server logs and error handling
+4. **Slow responses**: Optimize database queries and implement caching
+
+### Database Issues
+
+1. **Connection errors**: Check database credentials and network
+2. **Query performance**: Add indexes and optimize queries
+3. **Migration issues**: Review migration files and database state
+4. **Data integrity**: Implement proper validation and constraints
+
+### Authentication Issues
+
+1. **Login failures**: Check Clerk configuration and credentials
+2. **Session issues**: Verify session management and middleware
+3. **Permission errors**: Check role-based access control implementation
+4. **Redirect loops**: Review authentication middleware logic
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Performance Optimization"
+  icon="zap"
+  href="/development/performance-optimization"
+>
+  Learn how to optimize your application for speed and efficiency
+</Card>
+
+<Card
+  title="Testing"
+  icon="test-tube"
+  href="/development/testing"
+>
+  Learn how to write and run tests for your application
+</Card>
+
+</CardGroup>

@@ -1,0 +1,613 @@
+---
+title: 'Content Management'
+description: 'Manage marketing pages and content in StackForge'
+---
+
+# Content Management
+
+Content management is essential for maintaining and updating your StackForge application's marketing pages, blog posts, and other content. This guide covers strategies for managing content effectively.
+
+## Overview
+
+StackForge provides a flexible foundation for content management, allowing you to create and maintain marketing pages, blog posts, and other content. This guide covers content management strategies and best practices.
+
+## Marketing Pages
+
+### Creating Marketing Pages
+
+Marketing pages are located in the `(marketing)` route group. Create new pages by adding files to `src/app/(marketing)/`:
+
+```tsx
+// src/app/(marketing)/features/page.tsx
+import { FeaturesSection } from '@/components/marketing/features-section';
+import { TestimonialsSection } from '@/components/marketing/testimonials-section';
+import { CtaSection } from '@/components/marketing/cta-section';
+
+export default function FeaturesPage() {
+  return (
+    <div className="container py-12">
+      <h1 className="text-4xl font-bold text-center mb-8">Features</h1>
+      <FeaturesSection />
+      <TestimonialsSection />
+      <CtaSection />
+    </div>
+  );
+}
+```
+
+### Dynamic Content for Marketing Pages
+
+Use constants for easily editable content:
+
+```ts
+// src/constants/features.ts
+export const FEATURES = [
+  {
+    title: 'AI-Powered Content Creation',
+    description: 'Generate engaging social media content with our advanced AI algorithms.',
+    icon: '🤖'
+  },
+  {
+    title: 'Multi-Platform Publishing',
+    description: 'Publish to all major social media platforms with a single click.',
+    icon: '📱'
+  },
+  {
+    title: 'Analytics Dashboard',
+    description: 'Track performance and optimize your social media strategy.',
+    icon: '📊'
+  }
+];
+```
+
+```tsx
+// src/components/marketing/features-section.tsx
+import { FEATURES } from '@/constants/features';
+
+export function FeaturesSection() {
+  return (
+    <section className="py-12">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {FEATURES.map((feature, index) => (
+          <div key={index} className="text-center">
+            <div className="text-4xl mb-4">{feature.icon}</div>
+            <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+            <p className="text-muted-foreground">{feature.description}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+```
+
+## Blog Management
+
+### Creating Blog Posts
+
+Implement a blog system using MDX or a database:
+
+```ts
+// src/db/schema/blog-posts.ts
+import { pgTable, serial, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+
+export const blogPosts = pgTable('blog_posts', {
+  id: serial('id').primaryKey(),
+  title: text('title').notNull(),
+  slug: text('slug').notNull().unique(),
+  excerpt: text('excerpt'),
+  content: text('content').notNull(),
+  published: boolean('published').default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+```
+
+### Blog Page Structure
+
+Create dynamic blog pages:
+
+```tsx
+// src/app/(marketing)/blog/page.tsx
+import { db } from '@/db';
+import { blogPosts } from '@/db/schema';
+import { BlogPostCard } from '@/components/marketing/blog-post-card';
+import { eq } from 'drizzle-orm';
+
+export default async function BlogPage() {
+  const posts = await db
+    .select()
+    .from(blogPosts)
+    .where(eq(blogPosts.published, true))
+    .orderBy(blogPosts.createdAt);
+
+  return (
+    <div className="container py-12">
+      <h1 className="text-4xl font-bold text-center mb-8">Blog</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {posts.map((post) => (
+          <BlogPostCard key={post.id} post={post} />
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+### Individual Blog Post Pages
+
+Create dynamic routes for individual blog posts:
+
+```tsx
+// src/app/(marketing)/blog/[slug]/page.tsx
+import { db } from '@/db';
+import { blogPosts } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import { notFound } from 'next/navigation';
+
+export default async function BlogPostPage({ params }: { params: { slug: string } }) {
+  const post = await db
+    .select()
+    .from(blogPosts)
+    .where(eq(blogPosts.slug, params.slug))
+    .limit(1);
+
+  if (!post.length) {
+    notFound();
+  }
+
+  return (
+    <article className="container py-12">
+      <h1 className="text-4xl font-bold mb-4">{post[0].title}</h1>
+      <p className="text-muted-foreground mb-8">{post[0].excerpt}</p>
+      <div className="prose max-w-none">
+        {/* Render content with proper HTML sanitization */}
+        <div dangerouslySetInnerHTML={{ __html: post[0].content }} />
+      </div>
+    </article>
+  );
+}
+```
+
+## Content Editing Workflow
+
+### Admin Content Management
+
+Create an admin interface for content management:
+
+```tsx
+// src/app/(main)/admin/content/page.tsx
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useAuth } from '@clerk/nextjs';
+import { ContentEditor } from '@/components/admin/content-editor';
+import { ContentList } from '@/components/admin/content-list';
+
+export default function ContentManagementPage() {
+  const { userId } = useAuth();
+  const [posts, setPosts] = useState([]);
+  const [selectedPost, setSelectedPost] = useState(null);
+
+  useEffect(() => {
+    // Fetch content for editing
+    fetchContent();
+  }, [userId]);
+
+  async function fetchContent() {
+    const response = await fetch('/api/admin/content');
+    const data = await response.json();
+    setPosts(data);
+  }
+
+  return (
+    <div className="container py-8">
+      <h1 className="text-3xl font-bold mb-6">Content Management</h1>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <ContentEditor 
+            post={selectedPost} 
+            onSave={fetchContent}
+          />
+        </div>
+        <div>
+          <ContentList 
+            posts={posts} 
+            onSelect={setSelectedPost}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+### Markdown/MDX Content
+
+For simpler content management, use MDX files:
+
+```mdx
+// src/content/blog/first-post.mdx
+---
+title: 'Getting Started with StackForge'
+date: '2023-01-01'
+author: 'John Doe'
+---
+
+# Getting Started with StackForge
+
+StackForge is a powerful boilerplate for building AI-powered social media marketing platforms.
+
+## Key Features
+
+- **Next.js 14**: Latest features with App Router
+- **TypeScript**: Type-safe development
+- **Tailwind CSS**: Utility-first styling
+- **Clerk**: Authentication
+- **Drizzle ORM**: Database management
+
+## Getting Started
+
+To get started with StackForge:
+
+1. Clone the repository
+2. Install dependencies with Bun
+3. Configure environment variables
+4. Run the development server
+```
+
+## Media Management
+
+### Image Optimization
+
+Implement an image management system:
+
+```tsx
+// src/components/admin/image-uploader.tsx
+'use client';
+
+import { useState } from 'react';
+import { uploadImage } from '@/lib/image-upload';
+
+export function ImageUploader({ onUpload }: { onUpload: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false);
+
+  async function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const url = await uploadImage(file);
+      onUpload(url);
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleFileUpload}
+        disabled={uploading}
+        className="hidden"
+        id="image-upload"
+      />
+      <label htmlFor="image-upload" className="cursor-pointer">
+        {uploading ? (
+          <p>Uploading...</p>
+        ) : (
+          <p>Click to upload an image</p>
+        )}
+      </label>
+    </div>
+  );
+}
+```
+
+### File Storage Strategy
+
+Choose an appropriate file storage solution:
+
+```ts
+// src/lib/image-upload.ts
+export async function uploadImage(file: File): Promise<string> {
+  // Option 1: Upload to cloud storage (AWS S3, Cloudinary, etc.)
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/upload', {
+    method: 'POST',
+    body: formData
+  });
+
+  const result = await response.json();
+  return result.url;
+
+  // Option 2: Store in database as base64 (not recommended for large files)
+  // const base64 = await fileToBase64(file);
+  // return base64;
+}
+```
+
+## Content Versioning
+
+### Draft and Publish Workflow
+
+Implement a draft/publish system:
+
+```ts
+// src/db/schema/content-versions.ts
+import { pgTable, serial, integer, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+
+export const contentVersions = pgTable('content_versions', {
+  id: serial('id').primaryKey(),
+  contentId: integer('content_id').notNull(),
+  title: text('title').notNull(),
+  content: text('content').notNull(),
+  isDraft: boolean('is_draft').default(true),
+  version: integer('version').notNull(),
+  createdBy: text('created_by').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+```
+
+### Content History
+
+Track content changes:
+
+```tsx
+// src/components/admin/content-history.tsx
+'use client';
+
+import { useEffect, useState } from 'react';
+
+export function ContentHistory({ contentId }: { contentId: number }) {
+  const [versions, setVersions] = useState([]);
+
+  useEffect(() => {
+    fetchVersions();
+  }, [contentId]);
+
+  async function fetchVersions() {
+    const response = await fetch(`/api/content/${contentId}/versions`);
+    const data = await response.json();
+    setVersions(data);
+  }
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold">Content History</h3>
+      {versions.map((version) => (
+        <div key={version.id} className="border rounded p-4">
+          <div className="flex justify-between items-center">
+            <span>Version {version.version}</span>
+            <span className="text-sm text-muted-foreground">
+              {new Date(version.createdAt).toLocaleDateString()}
+            </span>
+          </div>
+          <div className="mt-2">
+            <button 
+              onClick={() => restoreVersion(version.id)}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              Restore this version
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Content Localization
+
+### Multi-Language Support
+
+Implement localization for global audiences:
+
+```ts
+// src/lib/i18n.ts
+export const translations = {
+  en: {
+    'nav.home': 'Home',
+    'nav.features': 'Features',
+    'nav.pricing': 'Pricing',
+    'hero.title': 'AI-Powered Social Media Marketing'
+  },
+  es: {
+    'nav.home': 'Inicio',
+    'nav.features': 'Características',
+    'nav.pricing': 'Precios',
+    'hero.title': 'Marketing en Redes Sociales Impulsado por IA'
+  }
+};
+
+export function t(key: string, locale: string = 'en'): string {
+  return translations[locale]?.[key] || translations.en[key] || key;
+}
+```
+
+### Language Switcher
+
+Add a language switcher component:
+
+```tsx
+// src/components/global/language-switcher.tsx
+'use client';
+
+import { usePathname, useRouter } from 'next/navigation';
+
+export function LanguageSwitcher() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const currentLocale = pathname.split('/')[1] || 'en';
+
+  const switchLanguage = (newLocale: string) => {
+    // Replace locale in path
+    const newPath = pathname.replace(/^\/[a-z]{2}/, `/${newLocale}`) || `/${newLocale}`;
+    router.push(newPath);
+  };
+
+  return (
+    <select 
+      value={currentLocale} 
+      onChange={(e) => switchLanguage(e.target.value)}
+      className="bg-transparent border rounded p-2"
+    >
+      <option value="en">English</option>
+      <option value="es">Español</option>
+      <option value="fr">Français</option>
+    </select>
+  );
+}
+```
+
+## Content Security
+
+### Sanitizing User Content
+
+Always sanitize user-generated content:
+
+```ts
+// src/lib/content-sanitizer.ts
+import sanitizeHtml from 'sanitize-html';
+
+export function sanitizeContent(content: string): string {
+  return sanitizeHtml(content, {
+    allowedTags: [
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'p', 'br', 'strong', 'em', 'u', 'ol', 'ul', 'li',
+      'a', 'img', 'blockquote', 'code', 'pre'
+    ],
+    allowedAttributes: {
+      a: ['href', 'target'],
+      img: ['src', 'alt', 'width', 'height']
+    },
+    allowedSchemes: ['http', 'https', 'mailto']
+  });
+}
+```
+
+## Best Practices
+
+### 1. Content Organization
+
+- Use a consistent folder structure
+- Implement clear naming conventions
+- Separate content from presentation logic
+
+### 2. Performance Optimization
+
+- Optimize images and media
+- Implement caching strategies
+- Use CDN for static content
+
+### 3. SEO Considerations
+
+- Implement proper metadata
+- Use semantic HTML
+- Create XML sitemaps
+
+### 4. Accessibility
+
+- Ensure proper heading structure
+- Add alt text to images
+- Implement keyboard navigation
+
+## Common Content Management Issues
+
+### Content Duplication
+
+Prevent duplicate content:
+
+```ts
+// Implement unique slugs
+export async function generateUniqueSlug(title: string): Promise<string> {
+  const baseSlug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (await slugExists(slug)) {
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+
+  return slug;
+}
+```
+
+### Broken Links
+
+Implement link validation:
+
+```ts
+// Validate internal links
+export function validateInternalLinks(content: string): string[] {
+  const linkRegex = /href="([^"]*)"/g;
+  const matches = content.match(linkRegex) || [];
+  const brokenLinks = [];
+
+  for (const match of matches) {
+    const url = match.replace('href="', '').replace('"', '');
+    if (url.startsWith('/') && !pageExists(url)) {
+      brokenLinks.push(url);
+    }
+  }
+
+  return brokenLinks;
+}
+```
+
+## Testing Content Management
+
+### Content Validation
+
+Test content rendering:
+
+```ts
+// __tests__/content.test.tsx
+import { render, screen } from '@testing-library/react';
+import { BlogPostPage } from '@/app/(marketing)/blog/[slug]/page';
+
+describe('Blog Post Page', () => {
+  test('renders blog post content', async () => {
+    const params = { slug: 'test-post' };
+    render(await BlogPostPage({ params }));
+    
+    expect(screen.getByText('Test Post Title')).toBeInTheDocument();
+    expect(screen.getByText('Test post content')).toBeInTheDocument();
+  });
+});
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Search Engine Optimization"
+  icon="search"
+  href="/development/search-engine-optimization"
+>
+  Optimize your application for search engines
+</Card>
+
+<Card
+  title="Performance Optimization"
+  icon="zap"
+  href="/development/performance-optimization"
+>
+  Learn about optimizing your application's performance
+</Card>
+
+</CardGroup>
