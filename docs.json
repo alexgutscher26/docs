@@ -32,8 +32,9 @@
           {
             "group": "Configuration",
             "pages": [
-              "environment-variables",
-              "application-configuration"
+              "configuration/environment-variables",
+              "configuration/application-configuration",
+              "configuration/authentication-configuration"
             ]
           },
           {
