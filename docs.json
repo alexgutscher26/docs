@@ -53,20 +53,6 @@
             "pages": [
               "api-reference/introduction"
             ]
-          },
-          {
-            "group": "Admin",
-            "pages": [
-              "api-reference/update/trigger",
-              "api-reference/update/status"
-            ]
-          },
-          {
-            "group": "Assistant",
-            "pages": [
-              "api-reference/assistant/create-assistant-message",
-              "api-reference/assistant/search"
-            ]
           }
         ]
       },
