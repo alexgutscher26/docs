@@ -1,0 +1,283 @@
+---
+title: 'Navigation Customization'
+description: 'Customize the navigation of your StackForge application'
+---
+
+# Navigation Customization
+
+Learn how to customize the navigation of your StackForge application, including the sidebar menu and footer links.
+
+## Sidebar Navigation
+
+The sidebar navigation is controlled by the `SIDEBAR_LINKS` constant in `src/constants/links.ts`. To customize the sidebar:
+
+1. Open `src/constants/links.ts`
+2. Modify the `SIDEBAR_LINKS` array:
+
+```ts
+// src/constants/links.ts
+import {
+  ChartPieIcon,
+  MegaphoneIcon,
+  LineChartIcon,
+  MessageSquareTextIcon,
+  UsersIcon,
+  CreditCardIcon,
+  SettingsIcon,
+} from 'lucide-react';
+
+export const SIDEBAR_LINKS = [
+  {
+    href: '/dashboard',
+    label: 'Dashboard',
+    icon: ChartPieIcon,
+  },
+  {
+    href: '/dashboard/campaigns',
+    label: 'Campaigns',
+    icon: MegaphoneIcon,
+  },
+  {
+    href: '/dashboard/analytics',
+    label: 'Analytics',
+    icon: LineChartIcon,
+  },
+  // Add or remove links as needed
+];
+```
+
+3. To add a new link, import the icon and add it to the array:
+
+```ts
+import { CalendarIcon } from 'lucide-react';
+
+// Add to SIDEBAR_LINKS array
+{
+  href: '/dashboard/calendar',
+  label: 'Calendar',
+  icon: CalendarIcon,
+}
+```
+
+4. To remove a link, simply delete it from the array.
+
+## Footer Navigation
+
+The footer navigation is controlled by the `FOOTER_LINKS` constant in `src/constants/links.ts`. To customize the footer:
+
+1. Open `src/constants/links.ts`
+2. Modify the `FOOTER_LINKS` array:
+
+```ts
+// src/constants/links.ts
+export const FOOTER_LINKS = [
+  {
+    title: 'Product',
+    links: [
+      { name: 'Home', href: '/' },
+      { name: 'Features', href: '/' },
+      { name: 'Pricing', href: '/' },
+      // Add or remove links as needed
+    ],
+  },
+  // ... other sections
+];
+```
+
+3. To add a new section:
+
+```ts
+{
+  title: 'Resources',
+  links: [
+    { name: 'Blog', href: '/blog' },
+    { name: 'Documentation', href: '/docs' },
+    { name: 'Support', href: '/support' },
+  ],
+}
+```
+
+4. To modify existing links, simply update the name and href properties.
+
+## Adding New Navigation Components
+
+To add new navigation components beyond the sidebar and footer:
+
+1. Create a new component in `src/components/`:
+
+```tsx
+// src/components/custom-navigation.tsx
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+export function CustomNavigation() {
+  const pathname = usePathname();
+  
+  const links = [
+    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/profile', label: 'Profile' },
+    { href: '/settings', label: 'Settings' },
+  ];
+  
+  return (
+    <nav>
+      <ul>
+        {links.map((link) => (
+          <li key={link.href}>
+            <Link 
+              href={link.href}
+              className={pathname === link.href ? 'active' : ''}
+            >
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+```
+
+2. Use the component in your layouts or pages:
+
+```tsx
+// src/app/dashboard/layout.tsx
+import { CustomNavigation } from '@/components/custom-navigation';
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <CustomNavigation />
+      <main>{children}</main>
+    </div>
+  );
+}
+```
+
+## Conditional Navigation
+
+To show or hide navigation items based on user permissions or feature flags:
+
+```ts
+// src/constants/links.ts
+import { isFeatureEnabled } from '@/lib/feature-flags';
+
+// Conditional links based on feature flags
+export const SIDEBAR_LINKS = [
+  {
+    href: '/dashboard',
+    label: 'Dashboard',
+    icon: ChartPieIcon,
+  },
+  // Only show billing link if feature is enabled
+  ...(isFeatureEnabled('billing') ? [{
+    href: '/dashboard/billing',
+    label: 'Billing',
+    icon: CreditCardIcon,
+  }] : []),
+];
+```
+
+## Mobile Navigation
+
+Mobile navigation is handled by the `MobileSidebar` component in `src/components/dashboard/mobile-sidebar.tsx`. To customize mobile navigation:
+
+1. Modify the mobile sidebar component directly:
+
+```tsx
+// src/components/dashboard/mobile-sidebar.tsx
+'use client';
+
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Menu } from 'lucide-react';
+import { SIDEBAR_LINKS } from '@/constants/links';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+export function MobileSidebar() {
+  const pathname = usePathname();
+  
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="outline" size="icon">
+          <Menu className="h-4 w-4" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left">
+        <nav className="flex flex-col gap-4">
+          {SIDEBAR_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`flex items-center gap-2 px-2 py-1 rounded ${
+                pathname === link.href ? 'bg-primary text-primary-foreground' : ''
+              }`}
+            >
+              <link.icon className="h-4 w-4" />
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      </SheetContent>
+    </Sheet>
+  );
+}
+```
+
+## Testing Navigation Changes
+
+To test your navigation changes:
+
+1. Restart your development server: `bun run dev`
+2. Navigate to different pages to verify links work correctly
+3. Check that active states are properly applied
+4. Test mobile navigation on different screen sizes
+5. Verify that conditional navigation works as expected
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Links not working**: Check that href values are correct and routes exist
+2. **Active states not applying**: Verify that the pathname comparison is correct
+3. **Mobile navigation not showing**: Check that the mobile sidebar component is included in the layout
+4. **Icons not displaying**: Ensure icons are properly imported and used
+
+### Debugging Navigation Issues
+
+To debug navigation issues:
+
+1. Check the browser console for errors
+2. Verify that all imported components and icons exist
+3. Confirm that route paths match your file structure
+4. Test navigation on different screen sizes
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Branding Customization"
+  icon="palette"
+  href="/customization/branding"
+>
+  Learn how to customize your application's branding
+</Card>
+
+<Card
+  title="Content Customization"
+  icon="file-text"
+  href="/customization/content"
+>
+  Learn how to customize application content
+</Card>
+
+</CardGroup>

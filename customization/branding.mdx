@@ -1,0 +1,189 @@
+---
+title: 'Branding Customization'
+description: 'Customize the branding of your StackForge application'
+---
+
+# Branding Customization
+
+Learn how to customize the branding of your StackForge application, including the application name, logo, and color scheme.
+
+## Application Name
+
+The application name is controlled by the `NEXT_PUBLIC_APP_NAME` environment variable. To change your application name:
+
+1. Update the `NEXT_PUBLIC_APP_NAME` variable in your `.env.local` file:
+
+```env
+NEXT_PUBLIC_APP_NAME=YourAppName
+```
+
+2. The application name is used throughout the application, including in the navigation bar and page titles.
+
+## Logo Customization
+
+To customize the logo for your application:
+
+1. Replace the logo files in the `public/` directory:
+   - `public/logo.png` - Main logo
+   - `public/logo-dark.png` - Dark mode logo (if different)
+   - `public/favicon.ico` - Favicon
+
+2. Update the logo references in `src/components/global/icons.tsx` if needed:
+
+```tsx
+// src/components/global/icons.tsx
+const Icons = {
+  icon: () => (
+    <Image 
+      src="/logo.png" 
+      alt="Your App Name" 
+      width={32} 
+      height={32} 
+    />
+  ),
+};
+```
+
+## Color Scheme
+
+StackForge uses Tailwind CSS for styling. To customize the color scheme:
+
+1. Update the colors in `tailwind.config.ts`:
+
+```ts
+// tailwind.config.ts
+export default {
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#f0fdf4',
+          100: '#dcfce7',
+          200: '#bbf7d0',
+          300: '#86efac',
+          400: '#4ade80',
+          500: '#22c55e',
+          600: '#16a34a',
+          700: '#15803d',
+          800: '#166534',
+          900: '#14532d',
+        },
+      },
+    },
+  },
+};
+```
+
+2. Update the CSS variables in `src/styles/globals.css` if needed:
+
+```css
+/* src/styles/globals.css */
+:root {
+  --primary: #22c55e;
+  --primary-foreground: #f8fafc;
+}
+```
+
+## Fonts
+
+To customize the fonts used in your application:
+
+1. Update the font imports in `src/styles/globals.css`:
+
+```css
+/* src/styles/globals.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+```
+
+2. Update the font configuration in `src/constants/fonts.ts`:
+
+```ts
+// src/constants/fonts.ts
+import { Inter } from 'next/font/google';
+
+export const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+});
+```
+
+## Page Titles and Meta Tags
+
+To customize page titles and meta tags:
+
+1. Update the site constants in `src/constants/site.ts`:
+
+```ts
+// src/constants/site.ts
+export const APP_NAME = process.env['NEXT_PUBLIC_APP_NAME'] || 'YourAppName';
+export const APP_DESCRIPTION = 'Your application description';
+```
+
+2. Update the metadata in individual pages:
+
+```tsx
+// src/app/page.tsx
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Home | YourAppName',
+  description: 'Your application description',
+};
+
+export default function HomePage() {
+  // ...
+}
+```
+
+## Testing Branding Changes
+
+To test your branding changes:
+
+1. Restart your development server: `bun run dev`
+2. Check that the application name appears correctly
+3. Verify that the new logo is displayed
+4. Confirm that the color scheme has been updated
+5. Test in both light and dark mode if applicable
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Logo not updating**: Clear your browser cache or try a hard refresh
+2. **Colors not applying**: Check that you've restarted the development server
+3. **Font not loading**: Verify the font import URLs are correct
+
+### Debugging Branding Issues
+
+To debug branding issues:
+
+1. Check the browser developer tools for any errors
+2. Verify that environment variables are loaded correctly
+3. Confirm that file paths are correct
+4. Check the Tailwind CSS configuration
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Navigation Customization"
+  icon="navigation"
+  href="/customization/navigation"
+>
+  Learn how to customize navigation links
+</Card>
+
+<Card
+  title="Content Customization"
+  icon="file-text"
+  href="/customization/content"
+>
+  Learn how to customize application content
+</Card>
+
+</CardGroup>

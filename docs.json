@@ -38,6 +38,15 @@
             ]
           },
           {
+            "group": "Customization",
+            "pages":[
+              "customization/index",
+              "customization/branding",
+              "customization/navigation",
+              "customization/content"
+            ]
+          },
+          {
             "group": "Help",
             "pages": [
               "faq"

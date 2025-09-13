@@ -1,0 +1,379 @@
+---
+title: 'Content Customization'
+description: 'Customize the content of your StackForge application'
+---
+
+# Content Customization
+
+Learn how to customize the content of your StackForge application, including plans, perks, and other static content.
+
+## Plans and Pricing
+
+The plans and pricing information is controlled by the `PLANS` constant in `src/constants/plans.ts`. To customize the plans:
+
+1. Open `src/constants/plans.ts`
+2. Modify the `PLANS` array:
+
+```ts
+// src/constants/plans.ts
+type PLAN = {
+  id: string;
+  title: string;
+  desc: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  badge?: string;
+  buttonText: string;
+  features: string[];
+  link: string;
+};
+
+export const PLANS: PLAN[] = [
+  {
+    id: 'free',
+    title: 'Free',
+    desc: 'Get started with essential tools for social media content creation',
+    monthlyPrice: 0,
+    yearlyPrice: 0,
+    buttonText: 'Get Started',
+    features: [
+      'Basic AI content generation',
+      '4 social media integrations',
+      'Community support',
+      '1 project limit',
+      'Standard analytics',
+      'Basic image generation',
+    ],
+    link: 'https://stripe.com/free-plan-link',
+  },
+  // ... other plans
+];
+```
+
+3. To add a new plan, add a new object to the array:
+
+```ts
+{
+  id: 'starter',
+  title: 'Starter',
+  desc: 'Perfect for individuals and small teams',
+  monthlyPrice: 5,
+  yearlyPrice: 60,
+  buttonText: 'Get Started',
+  features: [
+    'Enhanced AI content generation',
+    '6 social media integrations',
+    'Email support',
+    '5 project limit',
+    'Enhanced analytics',
+    'Pro image generation',
+  ],
+  link: 'https://stripe.com/starter-plan-link',
+}
+```
+
+4. To modify existing plans, update the properties as needed.
+
+## Perks and Features
+
+The perks and features information is controlled by the `PERKS` constant in `src/constants/perks.ts`. To customize the perks:
+
+1. Open `src/constants/perks.ts`
+2. Modify the `PERKS` array:
+
+```ts
+// src/constants/perks.ts
+type Perk = {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+};
+
+export const PERKS: Perk[] = [
+  {
+    icon: <Zap className="h-6 w-6" />,
+    title: 'Lightning Fast',
+    description: 'Experience blazing fast performance with our optimized infrastructure',
+  },
+  // ... other perks
+];
+```
+
+3. To add a new perk, add a new object to the array:
+
+```ts
+import { Star } from 'lucide-react';
+
+{
+  icon: <Star className="h-6 w-6" />,
+  title: 'Premium Support',
+  description: 'Get 24/7 premium support from our expert team',
+}
+```
+
+4. To modify existing perks, update the properties as needed.
+
+## Reviews and Testimonials
+
+The reviews and testimonials are controlled by the `REVIEWS` constant in `src/constants/reviews.ts`. To customize the reviews:
+
+1. Open `src/constants/reviews.ts`
+2. Modify the `REVIEWS` array:
+
+```ts
+// src/constants/reviews.ts
+type Review = {
+  name: string;
+  role: string;
+  content: string;
+  avatar: string;
+  rating: number;
+};
+
+export const REVIEWS: Review[] = [
+  {
+    name: 'Alex Johnson',
+    role: 'Marketing Director',
+    content: 'This platform has transformed our social media strategy...',
+    avatar: '/avatars/alex.jpg',
+    rating: 5,
+  },
+  // ... other reviews
+];
+```
+
+3. To add a new review, add a new object to the array:
+
+```ts
+{
+  name: 'Sarah Williams',
+  role: 'Content Creator',
+  content: 'The AI content generation has saved us countless hours...',
+  avatar: '/avatars/sarah.jpg',
+  rating: 5,
+}
+```
+
+4. To modify existing reviews, update the properties as needed.
+
+## Dashboard Content
+
+The dashboard content is controlled by various constants in `src/constants/dashboard.ts`. To customize dashboard content:
+
+1. Open `src/constants/dashboard.ts`
+2. Modify the data arrays:
+
+```ts
+// src/constants/dashboard.ts
+export const ANALYTICS_DATA = [
+  { name: 'Jan', engagement: 3000, reach: 5200 },
+  // ... other data points
+];
+
+export const ACTIVITIES = [
+  { id: 1, text: 'New campaign "Summer Sale" created', time: '2 hours ago' },
+  // ... other activities
+];
+
+export const RECENT_SALES = [
+  {
+    name: 'Olivia Martin',
+    email: 'olivia.martin@email.com',
+    amount: '+$1,999.00',
+  },
+  // ... other sales
+];
+```
+
+3. Update the data as needed for your application.
+
+## Marketing Page Content
+
+Marketing page content is typically found in the components in `src/components/marketing/`. To customize marketing content:
+
+1. Open the relevant marketing component files:
+   - `src/components/marketing/hero.tsx`
+   - `src/components/marketing/features.tsx`
+   - `src/components/marketing/perks.tsx`
+   - `src/components/marketing/pricing.tsx`
+   - `src/components/marketing/reviews.tsx`
+   - `src/components/marketing/cta.tsx`
+
+2. Modify the content directly in these components:
+
+```tsx
+// src/components/marketing/hero.tsx
+export function Hero() {
+  return (
+    <section className="container">
+      <div className="flex flex-col items-center text-center">
+        <h1 className="text-4xl font-bold">
+          Your Custom Heading Here
+        </h1>
+        <p className="mt-4 text-lg text-muted-foreground">
+          Your custom description here...
+        </p>
+        <Button className="mt-6">Get Started</Button>
+      </div>
+    </section>
+  );
+}
+```
+
+## Adding New Content Sections
+
+To add new content sections to your application:
+
+1. Create a new component in the appropriate directory:
+
+```tsx
+// src/components/marketing/custom-section.tsx
+export function CustomSection() {
+  return (
+    <section className="container py-12">
+      <div className="text-center">
+        <h2 className="text-3xl font-bold">Custom Section</h2>
+        <p className="mt-4 text-muted-foreground">
+          This is a custom content section.
+        </p>
+      </div>
+    </section>
+  );
+}
+```
+
+2. Import and use the component in your pages:
+
+```tsx
+// src/app/(marketing)/page.tsx
+import { CustomSection } from '@/components/marketing/custom-section';
+
+export default function MarketingPage() {
+  return (
+    <>
+      <Hero />
+      <Features />
+      <CustomSection />
+      <Perks />
+      <Pricing />
+      <Reviews />
+      <CTA />
+    </>
+  );
+}
+```
+
+## Dynamic Content Management
+
+For more advanced content management, you can integrate with a CMS or create a simple admin interface:
+
+1. Create an API route to serve content:
+
+```ts
+// src/app/api/content/route.ts
+import { NextResponse } from 'next/server';
+
+const content = {
+  hero: {
+    title: 'Dynamic Hero Title',
+    description: 'Dynamic hero description',
+  },
+  features: [
+    {
+      title: 'Dynamic Feature',
+      description: 'Dynamic feature description',
+    },
+  ],
+};
+
+export async function GET() {
+  return NextResponse.json(content);
+}
+```
+
+2. Fetch content in your components:
+
+```tsx
+// src/components/marketing/dynamic-hero.tsx
+'use client';
+
+import { useEffect, useState } from 'react';
+
+type HeroContent = {
+  title: string;
+  description: string;
+};
+
+export function DynamicHero() {
+  const [content, setContent] = useState<HeroContent | null>(null);
+  
+  useEffect(() => {
+    fetch('/api/content')
+      .then(res => res.json())
+      .then(data => setContent(data.hero));
+  }, []);
+  
+  if (!content) return <div>Loading...</div>;
+  
+  return (
+    <section className="container">
+      <div className="flex flex-col items-center text-center">
+        <h1 className="text-4xl font-bold">{content.title}</h1>
+        <p className="mt-4 text-lg text-muted-foreground">
+          {content.description}
+        </p>
+      </div>
+    </section>
+  );
+}
+```
+
+## Testing Content Changes
+
+To test your content changes:
+
+1. Restart your development server: `bun run dev`
+2. Navigate to the relevant pages to verify content displays correctly
+3. Check that all links and buttons work as expected
+4. Test on different screen sizes to ensure responsive design
+5. Verify that dynamic content loads properly
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Content not updating**: Check that you've restarted the development server
+2. **Images not loading**: Verify image paths are correct and files exist
+3. **Links not working**: Check that href values are correct and routes exist
+4. **Dynamic content not loading**: Verify API routes are working correctly
+
+### Debugging Content Issues
+
+To debug content issues:
+
+1. Check the browser console for errors
+2. Verify that all imported components exist
+3. Confirm that file paths are correct
+4. Test API routes directly in the browser
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Branding Customization"
+  icon="palette"
+  href="/customization/branding"
+>
+  Learn how to customize your application's branding
+</Card>
+
+<Card
+  title="Navigation Customization"
+  icon="navigation"
+  href="/customization/navigation"
+>
+  Learn how to customize navigation links
+</Card>
+
+</CardGroup>
