@@ -1,0 +1,342 @@
+---
+title: 'Content Security Policy'
+description: 'Implement CSP to prevent XSS attacks'
+---
+
+# Content Security Policy (CSP)
+
+Learn how to secure your StackForge application with Content Security Policy (CSP) to prevent XSS attacks and other code injection vulnerabilities.
+
+## Overview
+
+Content Security Policy (CSP) is an added security layer that helps detect and mitigate certain types of attacks, including Cross-Site Scripting (XSS) and data injection attacks. CSP works by specifying which sources of content are allowed to be loaded and executed by the browser.
+
+## How CSP Works
+
+CSP works by adding a `Content-Security-Policy` HTTP header to your responses that tells the browser which sources of content are allowed. The browser then blocks any content that doesn't match the policy.
+
+### Example CSP Header
+
+```http
+Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';
+```
+
+This policy would:
+- Allow resources to be loaded only from the same origin (`'self'`)
+- Allow inline scripts and styles (not recommended for production)
+
+## Implementing CSP in StackForge
+
+### Enabling CSP
+
+To enable CSP in your StackForge application, you need to configure it in your middleware:
+
+```ts
+// src/middleware.ts
+import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  const response = NextResponse.next();
+  
+  // Add CSP header
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';"
+  );
+  
+  return response;
+}
+```
+
+### Development vs Production
+
+You might want to use a more permissive CSP in development:
+
+```ts
+// src/middleware.ts
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+const cspHeader = isDevelopment
+  ? "default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+  : "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';";
+
+export function middleware(request: NextRequest) {
+  const response = NextResponse.next();
+  response.headers.set('Content-Security-Policy', cspHeader);
+  return response;
+}
+```
+
+## CSP Directives
+
+### Common Directives
+
+| Directive | Purpose | Example |
+|----------|---------|---------|
+| `default-src` | Fallback for other directives | `'self'` |
+| `script-src` | Valid sources for JavaScript | `'self'`, `'unsafe-inline'` |
+| `style-src` | Valid sources for CSS | `'self'`, `'unsafe-inline'` |
+| `img-src` | Valid sources for images | `'self'`, `data:` |
+| `font-src` | Valid sources for fonts | `'self'` |
+| `connect-src` | Valid sources for AJAX, WebSocket | `'self'` |
+| `frame-ancestors` | Valid parents that can embed | `'none'` |
+
+### Strict CSP Example
+
+```ts
+// Production CSP
+const cspHeader = `
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'sha256-abc123...';
+  img-src 'self' data: https://images.example.com;
+  font-src 'self';
+  connect-src 'self' https://api.example.com;
+  frame-ancestors 'none';
+  upgrade-insecure-requests;
+`.replace(/\n/g, ' ');
+```
+
+## Handling Inline Scripts and Styles
+
+### Nonce-based Approach
+
+For inline scripts and styles, use a nonce-based approach:
+
+```ts
+// src/middleware.ts
+import { randomBytes } from 'crypto';
+
+export function middleware(request: NextRequest) {
+  const response = NextResponse.next();
+  
+  // Generate a nonce
+  const nonce = randomBytes(16).toString('base64');
+  
+  // Add nonce to headers
+  response.headers.set('X-Nonce', nonce);
+  
+  // Add CSP with nonce
+  const cspHeader = `
+    default-src 'self';
+    script-src 'self' 'nonce-${nonce}';
+    style-src 'self' 'nonce-${nonce}';
+  `.replace(/\n/g, ' ');
+  
+  response.headers.set('Content-Security-Policy', cspHeader);
+  
+  return response;
+}
+```
+
+### Using Nonce in Components
+
+```tsx
+// src/app/layout.tsx
+import { headers } from 'next/headers';
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const headersList = headers();
+  const nonce = headersList.get('X-Nonce');
+  
+  return (
+    <html lang="en">
+      <head>
+        <style nonce={nonce}>
+          {`body { margin: 0; }`}
+        </style>
+      </head>
+      <body>
+        {children}
+        <script 
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html: `console.log('Hello World');`
+          }}
+        />
+      </body>
+    </html>
+  );
+}
+```
+
+## Third-Party Integrations
+
+### Google Analytics
+
+To use Google Analytics with CSP:
+
+```ts
+// CSP Header
+const cspHeader = `
+  script-src 'self' https://www.google-analytics.com;
+  img-src 'self' https://www.google-analytics.com;
+`.replace(/\n/g, ' ');
+```
+
+### External Fonts
+
+For Google Fonts:
+
+```ts
+// CSP Header
+const cspHeader = `
+  font-src 'self' https://fonts.gstatic.com;
+  style-src 'self' https://fonts.googleapis.com;
+`.replace(/\n/g, ' ');
+```
+
+## Reporting CSP Violations
+
+### Setting up Reporting
+
+You can set up CSP to report violations to an endpoint:
+
+```ts
+const cspHeader = `
+  default-src 'self';
+  script-src 'self';
+  report-uri /api/csp-report;
+  report-to csp-endpoint;
+`.replace(/\n/g, ' ');
+```
+
+### Report Endpoint
+
+```ts
+// src/app/api/csp-report/route.ts
+import { NextResponse } from 'next/server';
+
+export async function POST(request: Request) {
+  const report = await request.json();
+  
+  // Log the violation
+  console.warn('CSP Violation:', report);
+  
+  // In production, you might want to send this to a logging service
+  // or store it in a database for analysis
+  
+  return NextResponse.json({ success: true });
+}
+```
+
+## Testing CSP
+
+### Browser Developer Tools
+
+Use browser developer tools to check for CSP violations:
+
+1. Open Developer Tools (F12)
+2. Go to the Console tab
+3. Look for CSP violation messages
+
+### Testing Tools
+
+Use online CSP testing tools:
+
+1. [CSP Evaluator](https://csp-evaluator.withgoogle.com/)
+2. [Report URI CSP Tester](https://report-uri.com/home/testing)
+
+## Best Practices
+
+### 1. Start with a Restrictive Policy
+
+Begin with a restrictive policy and gradually add exceptions as needed:
+
+```ts
+// Start with this
+const cspHeader = "default-src 'none';";
+
+// Then gradually add what you need
+const cspHeader = "default-src 'self';";
+```
+
+### 2. Use Hashes for Inline Content
+
+For static inline scripts/styles, use hashes instead of `'unsafe-inline'`:
+
+```ts
+// Generate hash for inline script
+const scriptContent = "console.log('Hello World');";
+const hash = crypto.createHash('sha256').update(scriptContent).digest('base64');
+
+// CSP Header
+const cspHeader = `script-src 'sha256-${hash}';`;
+```
+
+### 3. Avoid `'unsafe-inline'` and `'unsafe-eval'`
+
+These directives significantly reduce security:
+
+```ts
+// ❌ Avoid these
+script-src 'unsafe-inline' 'unsafe-eval';
+
+// ✅ Better alternatives
+script-src 'self' 'nonce-abc123' 'sha256-xyz789';
+```
+
+### 4. Regularly Review and Update
+
+Regularly review your CSP policy and update it as your application changes:
+
+```ts
+// Periodically audit your CSP
+// Check browser console for violations
+// Update policy as needed
+```
+
+### 5. Use `upgrade-insecure-requests`
+
+Automatically upgrade HTTP requests to HTTPS:
+
+```ts
+const cspHeader = "upgrade-insecure-requests;";
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Blocked Resources**: Check browser console for CSP violations
+2. **Inline Scripts**: Use nonces or hashes for inline content
+3. **Third-Party Scripts**: Add specific domains to your policy
+4. **Development vs Production**: Use different policies for different environments
+
+### Debugging Tips
+
+1. Use `report-only` mode to test without blocking:
+   ```ts
+   response.headers.set('Content-Security-Policy-Report-Only', cspHeader);
+   ```
+
+2. Check browser developer tools for violation reports
+
+3. Implement a CSP violation reporting endpoint
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Data Validation"
+  icon="check-circle"
+  href="/security/data-validation"
+>
+  Learn about data validation techniques
+</Card>
+
+<Card
+  title="Authentication Security"
+  icon="key"
+  href="/security/authentication"
+>
+  Secure user authentication and sessions
+</Card>
+
+</CardGroup>

@@ -1,0 +1,298 @@
+---
+title: 'Next.js Security Best Practices'
+description: 'Learn security best practices for Next.js applications'
+---
+
+# Next.js Security Best Practices
+
+Learn best practices for securing your Next.js application in StackForge.
+
+## Overview
+
+This section contains a list of best practices for Next.js applications, applicable to StackForge or any other Next.js application.
+
+## Key Security Principles
+
+### 1. Do not pass sensitive data to client components
+
+The first and most important rule is that what goes in client components will be passed to the client.
+
+**Best practices:**
+
+- Do not pass sensitive data to client components. If you're using an API Key server-side, do not pass it to the client.
+- Avoid exporting server and client code from the same file. Instead, define separate entry points for server and client code.
+- Use the `import 'server-only'` package to raise errors when server code unexpectedly ends up in the client bundle.
+
+**Example of incorrect implementation:**
+
+```tsx
+// ❌ Incorrect - Passing sensitive data to client component
+async function ServerComponent() {
+  const config = {
+    apiKey: process.env.API_KEY,
+    storeId: process.env.STORE_ID,
+  };
+  
+  const data = await fetchData(config);
+  
+  // This passes sensitive data to the client
+  return <ClientComponent data={data} config={config} />;
+}
+```
+
+**Better approach:**
+
+```ts
+// ✅ Better - Using server-only module
+import 'server-only';
+
+const config = {
+  apiKey: process.env.API_KEY,
+  storeId: process.env.STORE_ID,
+};
+
+export async function fetchData() {
+  const data = await fetchDataFromExternalApi(config);
+  const storeId = config.storeId;
+  
+  // Only return non-sensitive data
+  return { data, storeId };
+}
+```
+
+```tsx
+// ✅ Server component using the service
+import { fetchData } from './fetch-data';
+
+async function ServerComponent() {
+  const { data, storeId } = await fetchData();
+  return <ClientComponent data={data} storeId={storeId} />;
+}
+```
+
+### 2. Do not mix up client and server imports
+
+Sometimes, you have a package that exports both client and server code. This is a problem because it will end up in the client bundle.
+
+**Example of problematic barrel file:**
+
+```ts
+// ❌ Problematic - Mixing server and client exports
+export * from './fetch-data'; // Server code
+export * from './client-component'; // Client code
+```
+
+**Better approach:**
+
+```json
+// ✅ package.json - Separate exports
+{
+  "exports": {
+    "./server": "./server.ts",
+    "./client": "./client.tsx"
+  }
+}
+```
+
+This way, you can import the server and client code separately and won't end up with a mix of server and client code in the client bundle.
+
+## Environment Variables Security
+
+Environment variables are essential for configuring your application across different environments. However, they require careful management to prevent security vulnerabilities.
+
+### Use NEXT_PUBLIC prefix appropriately
+
+Next.js handles environment variables uniquely, distinguishing between server-only and client-available variables:
+
+- Variables without the `NEXT_PUBLIC_` prefix are only available on the server
+- Variables with the `NEXT_PUBLIC_` prefix are available on both server and client
+
+**Client components can only access environment variables prefixed with NEXT_PUBLIC_:**
+
+```tsx
+// ✅ This is available in client components
+console.log(process.env.NEXT_PUBLIC_API_URL);
+
+// ❌ This is undefined in client components
+console.log(process.env.SECRET_API_KEY);
+```
+
+### Never use NEXT_PUBLIC_ variables for sensitive data
+
+Since `NEXT_PUBLIC_` variables are embedded in the JavaScript bundle sent to browsers, they should never contain sensitive information:
+
+```env
+# ❌ UNSAFE: This will be exposed to the client
+NEXT_PUBLIC_API_KEY=sk_live_1234567890  # NEVER DO THIS!
+
+# ✅ SAFE: This is only available server-side
+API_KEY=sk_live_1234567890  # This is correct
+```
+
+**Remember:**
+
+1. API keys, secrets, tokens, and passwords should never use the `NEXT_PUBLIC_` prefix
+2. Use `NEXT_PUBLIC_` only for genuinely public information like public API URLs, feature flags, or public identifiers
+
+### Proper use of .env files
+
+Next.js supports various .env files for different environments:
+
+```env
+.env                # Loaded in all environments
+.env.local          # Loaded in all environments, ignored by git
+.env.development    # Only loaded in development environment
+.env.production     # Only loaded in production environment
+.env.production.local # Only loaded in production environment, ignored by git
+.env.test           # Only loaded in test environment
+```
+
+**Best practices:**
+
+1. Store sensitive values in `.env.local` which should not be committed to your repository
+2. Use environment-specific files for values that differ between environments
+3. Use environment variables for sensitive data, not hardcoded values
+4. Use `NEXT_PUBLIC_` prefix for environment variables that are available on the client
+5. Never use `NEXT_PUBLIC_` variables for sensitive data
+6. Use `import 'server-only'` for server-only code
+7. Separate server and client code in different files and never mix them up in barrel files
+
+## Server Components Security
+
+### Use Server Components for sensitive operations
+
+Server Components run exclusively on the server and never send their code to the client. Use them for:
+
+- Database operations
+- API calls with secrets
+- Processing sensitive data
+- Authentication logic
+
+```tsx
+// ✅ Server Component - Safe for sensitive operations
+async function UserProfile({ userId }: { userId: string }) {
+  // This runs only on the server
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+  });
+  
+  return (
+    <div>
+      <h1>{user.name}</h1>
+      {/* Sensitive data is processed server-side */}
+    </div>
+  );
+}
+```
+
+## API Security
+
+### Validate all inputs
+
+Always validate and sanitize inputs from API requests:
+
+```ts
+// src/app/api/posts/route.ts
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const postSchema = z.object({
+  title: z.string().min(1).max(100),
+  content: z.string().min(1),
+});
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    
+    // Validate input
+    const result = postSchema.safeParse(body);
+    
+    if (!result.success) {
+      return NextResponse.json(
+        { error: 'Invalid input' },
+        { status: 400 }
+      );
+    }
+    
+    // Process validated data
+    const { title, content } = result.data;
+    
+    // ... rest of implementation
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Session Security
+
+### Secure session cookies
+
+When using session cookies, ensure they're properly configured:
+
+```ts
+// Example session configuration
+const sessionConfig = {
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    httpOnly: true, // Prevent XSS attacks
+    sameSite: 'lax', // CSRF protection
+    maxAge: 60 * 60 * 24 * 7, // 1 week
+  },
+};
+```
+
+## Error Handling
+
+### Don't expose sensitive information
+
+Never expose sensitive information in error messages sent to the client:
+
+```ts
+// ❌ Bad - Exposing database errors
+try {
+  // ... database operation
+} catch (error) {
+  return NextResponse.json(
+    { error: error.message }, // This might expose sensitive info
+    { status: 500 }
+  );
+}
+
+// ✅ Good - Generic error messages
+try {
+  // ... database operation
+} catch (error) {
+  console.error('Database error:', error); // Log for debugging
+  return NextResponse.json(
+    { error: 'An unexpected error occurred' }, // Generic message
+    { status: 500 }
+  );
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Data Validation"
+  icon="check-circle"
+  href="/security/data-validation"
+>
+  Learn about data validation techniques
+</Card>
+
+<Card
+  title="Content Security Policy"
+  icon="lock"
+  href="/security/csp"
+>
+  Implement CSP for additional protection
+</Card>
+
+</CardGroup>

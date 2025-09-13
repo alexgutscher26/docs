@@ -1,0 +1,330 @@
+---
+title: 'Database Security'
+description: 'Secure your PostgreSQL database and protect sensitive data'
+---
+
+# Database Security
+
+Database security is a critical component of any application's overall security posture. This guide covers best practices for securing your PostgreSQL database in StackForge.
+
+## Overview
+
+StackForge uses PostgreSQL as its primary database with Drizzle ORM for data access. While PostgreSQL is a robust and secure database system, proper configuration and security practices are essential to protect your application's data.
+
+Key areas of database security include:
+- Connection security
+- Authentication and authorization
+- Data encryption
+- Access control
+- Auditing and monitoring
+- Backup and recovery
+
+## Connection Security
+
+### Use SSL/TLS Connections
+
+Always use encrypted connections between your application and database:
+
+```env
+# In your .env file
+DATABASE_URL=postgresql://user:password@host:port/database?sslmode=require
+```
+
+In production environments, enforce SSL connections:
+
+```sql
+-- In your PostgreSQL configuration
+ssl = on
+ssl_cert_file = '/path/to/server.crt'
+ssl_key_file = '/path/to/server.key'
+```
+
+### Connection Pooling
+
+Use connection pooling to manage database connections efficiently and securely:
+
+```typescript
+// In your db/index.ts
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+
+const client = postgres(process.env.DATABASE_URL!, {
+  max: 20,        // Maximum connections
+  idle_timeout: 20, // Close idle connections after 20 seconds
+  max_lifetime: 60 * 60, // Close connections after 1 hour
+});
+
+export const db = drizzle(client);
+```
+
+## Authentication and Authorization
+
+### Strong Database Credentials
+
+Use strong, unique passwords for database users:
+
+```bash
+# Generate a strong password
+openssl rand -base64 32
+```
+
+Rotate credentials regularly and never commit them to version control.
+
+### Principle of Least Privilege
+
+Create database users with minimal required permissions:
+
+```sql
+-- Create a user for your application with limited permissions
+CREATE USER stackforge_app WITH PASSWORD 'strong_password';
+
+-- Grant only necessary permissions
+GRANT CONNECT ON DATABASE stackforge TO stackforge_app;
+GRANT USAGE ON SCHEMA public TO stackforge_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO stackforge_app;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO stackforge_app;
+
+-- Revoke unnecessary permissions
+REVOKE CREATE ON SCHEMA public FROM stackforge_app;
+```
+
+### Environment-Specific Credentials
+
+Use different database users for different environments:
+
+```env
+# Development
+DATABASE_URL=postgresql://dev_user:dev_password@localhost:5432/stackforge_dev
+
+# Staging
+DATABASE_URL=postgresql://staging_user:staging_password@host:port/stackforge_staging
+
+# Production
+DATABASE_URL=postgresql://prod_user:prod_password@host:port/stackforge_prod
+```
+
+## Data Encryption
+
+### Encryption at Rest
+
+Enable encryption at rest for your database:
+
+```sql
+-- For managed services like AWS RDS, enable encryption during creation
+-- For self-hosted PostgreSQL, use file system encryption or disk encryption
+```
+
+### Encryption in Transit
+
+Always use SSL/TLS for data in transit:
+
+```typescript
+// In your db configuration
+const client = postgres(process.env.DATABASE_URL!, {
+  ssl: {
+    rejectUnauthorized: true,
+    ca: fs.readFileSync('/path/to/ca-certificate.pem').toString(),
+  }
+});
+```
+
+### Application-Level Encryption
+
+For highly sensitive data, consider application-level encryption:
+
+```typescript
+// Example using Node.js crypto module
+import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
+
+const encrypt = (text: string, key: Buffer) => {
+  const iv = randomBytes(16);
+  const cipher = createCipheriv('aes-256-cbc', key, iv);
+  let encrypted = cipher.update(text);
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  return { iv: iv.toString('hex'), encryptedData: encrypted.toString('hex') };
+};
+
+const decrypt = (hash: { iv: string; encryptedData: string }, key: Buffer) => {
+  const iv = Buffer.from(hash.iv, 'hex');
+  const encryptedText = Buffer.from(hash.encryptedData, 'hex');
+  const decipher = createDecipheriv('aes-256-cbc', key, iv);
+  let decrypted = decipher.update(encryptedText);
+  decrypted = Buffer.concat([decrypted, decipher.final()]);
+  return decrypted.toString();
+};
+```
+
+## Access Control
+
+### Network Security
+
+Restrict database access to specific IP addresses:
+
+```sql
+-- In pg_hba.conf
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+host    stackforge      stackforge_app  10.0.0.0/8              scram-sha-256
+host    stackforge      stackforge_app  172.16.0.0/12           scram-sha-256
+```
+
+For cloud deployments, use VPCs and security groups to limit access.
+
+### Firewall Configuration
+
+Configure firewalls to only allow necessary database connections:
+
+```bash
+# Example iptables rules
+iptables -A INPUT -p tcp --dport 5432 -s 10.0.0.0/8 -j ACCEPT
+iptables -A INPUT -p tcp --dport 5432 -j DROP
+```
+
+## Auditing and Monitoring
+
+### Enable Logging
+
+Configure PostgreSQL to log security-relevant events:
+
+```sql
+# In postgresql.conf
+log_connections = on
+log_disconnections = on
+log_statement = 'mod'
+log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
+```
+
+### Monitor Database Activity
+
+Use tools to monitor database activity:
+
+```sql
+-- Enable pg_stat_statements for query monitoring
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+
+-- Monitor active connections
+SELECT * FROM pg_stat_activity WHERE state = 'active';
+
+-- Monitor slow queries
+SELECT query, calls, total_time, mean_time 
+FROM pg_stat_statements 
+ORDER BY mean_time DESC 
+LIMIT 10;
+```
+
+### Audit Trail
+
+Implement audit trails for sensitive operations:
+
+```typescript
+// Example audit logging
+import { db } from '@/db';
+import { auditLogs } from '@/db/schema';
+
+const logAuditEvent = async (
+  userId: string,
+  action: string,
+  resourceType: string,
+  resourceId: string,
+  details?: Record<string, any>
+) => {
+  await db.insert(auditLogs).values({
+    userId,
+    action,
+    resourceType,
+    resourceId,
+    details,
+    timestamp: new Date(),
+  });
+};
+```
+
+## Backup and Recovery
+
+### Secure Backups
+
+Encrypt database backups and store them securely:
+
+```bash
+# Create encrypted backup
+pg_dump -h host -U user database | gpg --cipher-algo AES256 --compress-algo 2 --symmetric --output backup.sql.gpg
+
+# Restore from encrypted backup
+gpg --decrypt backup.sql.gpg | psql -h host -U user database
+```
+
+### Regular Backups
+
+Implement automated backup schedules:
+
+```bash
+# Daily backups with retention
+0 2 * * * pg_dump -h host -U user database | gzip > /backups/backup-$(date +\%Y\%m\%d).sql.gz
+
+# Weekly full backups
+0 3 * * 0 pg_dump -h host -U user database > /backups/full-backup-$(date +\%Y\%m\%d).sql
+
+# Clean up old backups (keep 30 days)
+0 4 * * * find /backups -name "backup-*.sql.gz" -mtime +30 -delete
+```
+
+### Test Recovery Procedures
+
+Regularly test backup restoration:
+
+```bash
+# Test restore procedure
+pg_restore -h host -U user -d test_database backup.sql
+```
+
+## PostgreSQL Security Configuration
+
+### Secure Configuration Settings
+
+Configure PostgreSQL with security in mind:
+
+```sql
+# In postgresql.conf
+# Prevent version disclosure
+extra_float_digits = 0
+
+# Limit connections
+max_connections = 100
+
+# Disable unnecessary features
+fsync = on
+full_page_writes = on
+
+# Secure authentication
+password_encryption = scram-sha-256
+```
+
+### Disable Unnecessary Extensions
+
+Only install required extensions:
+
+```sql
+-- List installed extensions
+SELECT name, default_version, installed_version 
+FROM pg_available_extensions 
+WHERE installed_version IS NOT NULL;
+
+-- Remove unnecessary extensions
+DROP EXTENSION IF EXISTS [extension_name];
+```
+
+## Best Practices Summary
+
+1. **Use encrypted connections**: Always use SSL/TLS for database connections
+2. **Implement least privilege**: Grant minimal necessary permissions to database users
+3. **Encrypt sensitive data**: Use encryption for data at rest and in transit
+4. **Monitor and audit**: Enable logging and monitor database activity
+5. **Regular backups**: Implement secure backup and recovery procedures
+6. **Keep software updated**: Regularly update PostgreSQL and related software
+7. **Network security**: Restrict database access to trusted sources
+8. **Strong authentication**: Use strong passwords and consider multi-factor authentication
+
+## Additional Resources
+
+- [PostgreSQL Security Documentation](https://www.postgresql.org/docs/current/runtime-config-connection.html)
+- [OWASP Database Security](https://owasp.org/www-project-database-security/)
+- [NIST Database Security Guidelines](https://csrc.nist.gov/publications/detail/sp/800-121/final)

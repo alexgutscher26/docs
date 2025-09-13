@@ -1,0 +1,528 @@
+---
+title: 'Authentication Security'
+description: 'Secure user authentication and sessions'
+---
+
+# Authentication Security
+
+Learn how to secure user authentication and sessions in your StackForge application using Clerk.
+
+## Overview
+
+Authentication security is critical for protecting user accounts and application data. StackForge uses Clerk for authentication, which provides robust security features out of the box. This guide covers best practices for securing authentication in your application.
+
+## Clerk Security Features
+
+### Built-in Security Measures
+
+Clerk provides several built-in security features:
+
+1. **Password Security**: Automatic password hashing and validation
+2. **Session Management**: Secure session handling with automatic rotation
+3. **Multi-Factor Authentication**: Optional 2FA support
+4. **Rate Limiting**: Protection against brute force attacks
+5. **Email Verification**: Email verification workflows
+6. **Social Login Security**: Secure integration with social providers
+
+## Session Security
+
+### Session Configuration
+
+Configure secure session settings in your environment variables:
+
+```env
+# Session Configuration
+CLERK_SESSION_COOKIE_NAME=__session
+CLERK_SESSION_COOKIE_DOMAIN=yourdomain.com
+CLERK_SESSION_COOKIE_SECURE=true
+CLERK_SESSION_COOKIE_HTTP_ONLY=true
+CLERK_SESSION_COOKIE_SAME_SITE=lax
+CLERK_SESSION_EXPIRATION=86400  # 24 hours
+CLERK_SESSION_REFRESH_AT=3600   # 1 hour
+```
+
+### Session Management in Middleware
+
+Implement proper session management in your middleware:
+
+```ts
+// src/middleware.ts
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
+
+const isProtectedRoute = createRouteMatcher(['/dashboard(.*)']);
+const isPublicRoute = createRouteMatcher(['/', '/marketing(.*)']);
+const isAuthRoute = createRouteMatcher(['/auth(.*)']);
+
+export default clerkMiddleware((auth, req) => {
+  const { userId } = auth();
+
+  // Allow public routes
+  if (isPublicRoute(req)) {
+    return NextResponse.next();
+  }
+
+  // Redirect unauthenticated users to sign in
+  if (!userId && isProtectedRoute(req)) {
+    return NextResponse.redirect(new URL('/auth/signin', req.url));
+  }
+
+  // Check for authenticated users trying to access auth routes
+  if (userId && isAuthRoute(req)) {
+    return NextResponse.redirect(new URL('/dashboard', req.url));
+  }
+
+  // Continue with the next middleware or request handler
+  return NextResponse.next();
+});
+
+export const config = {
+  matcher: ['/((?!.*\\..*|_next).*)', '/(api|trpc)(.*)'],
+};
+```
+
+### Session Validation in API Routes
+
+Validate sessions in API routes:
+
+```ts
+// src/app/api/posts/route.ts
+import { getAuth } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
+
+export async function POST(request: Request) {
+  try {
+    // Get authentication information
+    const { userId, sessionId, orgId } = getAuth(request);
+    
+    // Check if user is authenticated
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    // Process request with authenticated user
+    const body = await request.json();
+    
+    const newPost = await db.insert(posts).values({
+      ...body,
+      userId,
+    }).returning();
+    
+    return NextResponse.json(newPost);
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Multi-Factor Authentication
+
+### Enabling 2FA
+
+Enable two-factor authentication in your Clerk dashboard:
+
+1. Go to your Clerk dashboard
+2. Navigate to "User & Authentication" > "Multi-factor"
+3. Enable "Two-step verification"
+4. Configure backup codes and authenticator apps
+
+### Requiring 2FA for Sensitive Operations
+
+Require 2FA for sensitive operations:
+
+```tsx
+// src/components/sensitive-action.tsx
+'use client';
+
+import { useUser } from '@clerk/nextjs';
+
+export function SensitiveAction() {
+  const { user } = useUser();
+  
+  // Check if user has 2FA enabled
+  const hasTwoFactor = user?.twoFactorEnabled;
+  
+  if (!hasTwoFactor) {
+    return (
+      <div>
+        <p>Please enable two-factor authentication to perform this action.</p>
+        <a href="/user/security">Enable 2FA</a>
+      </div>
+    );
+  }
+  
+  // Render sensitive action
+  return <SensitiveOperation />;
+}
+```
+
+## Password Security
+
+### Password Requirements
+
+Implement strong password requirements:
+
+```ts
+// src/schema/password-schema.ts
+import { z } from 'zod';
+
+export const passwordSchema = z.string()
+  .min(8, 'Password must be at least 8 characters')
+  .max(128, 'Password must be less than 128 characters')
+  .regex(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
+    'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+  );
+```
+
+### Password Reset Security
+
+Implement secure password reset workflows:
+
+```tsx
+// src/components/auth/reset-password-form.tsx
+'use client';
+
+import { useSignIn } from '@clerk/nextjs';
+import { useState } from 'react';
+
+export function ResetPasswordForm() {
+  const { isLoaded, signIn } = useSignIn();
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!isLoaded) return;
+    
+    setLoading(true);
+    
+    try {
+      // Create password reset strategy
+      await signIn.create({
+        strategy: 'reset_password_email_code',
+        identifier: email,
+      });
+      
+      // Redirect to reset code verification
+      window.location.href = '/auth/reset-password/verify';
+    } catch (error) {
+      console.error('Password reset error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Enter your email"
+        required
+      />
+      <button type="submit" disabled={loading}>
+        {loading ? 'Sending...' : 'Reset Password'}
+      </button>
+    </form>
+  );
+}
+```
+
+## Social Login Security
+
+### Configuring Social Providers
+
+Securely configure social login providers:
+
+1. Use official OAuth applications
+2. Configure proper redirect URLs
+3. Limit permissions to only what's necessary
+4. Regularly rotate client secrets
+
+```env
+# Social Login Configuration
+NEXT_PUBLIC_CLERK_GOOGLE_OAUTH_CLIENT_ID=your-google-client-id
+NEXT_PUBLIC_CLERK_GITHUB_OAUTH_CLIENT_ID=your-github-client-id
+```
+
+### Domain Verification
+
+Verify your domains in the Clerk dashboard to prevent account hijacking:
+
+1. Go to "Whitelist" > "Domains" in your Clerk dashboard
+2. Add your production domain
+3. Configure DNS records as required
+4. Test domain configuration
+
+## Token Security
+
+### API Token Management
+
+Securely manage API tokens:
+
+```ts
+// ❌ Never expose secret keys in client-side code
+const secretKey = process.env.CLERK_SECRET_KEY; // Only in server-side code
+
+// ✅ Use environment variables properly
+export async function serverFunction() {
+  const secretKey = process.env.CLERK_SECRET_KEY;
+  // Use secretKey for server-side operations
+}
+```
+
+### Token Rotation
+
+Implement token rotation for long-lived sessions:
+
+```ts
+// src/lib/session-utils.ts
+import { auth } from '@clerk/nextjs';
+
+export async function refreshSession() {
+  const { sessionId } = auth();
+  
+  if (sessionId) {
+    // Implement session refresh logic
+    // This might involve calling Clerk's session management APIs
+  }
+}
+```
+
+## Rate Limiting
+
+### Implementing Rate Limiting
+
+Protect authentication endpoints from brute force attacks:
+
+```ts
+// src/lib/rate-limit.ts
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+
+// Create a new ratelimiter for authentication
+export const authRateLimiter = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(5, '10 m'), // 5 attempts per 10 minutes
+  analytics: true,
+});
+
+// Usage in API routes
+export async function POST(request: Request) {
+  const ip = request.headers.get('x-forwarded-for') ?? '127.0.0.1';
+  
+  const { success } = await authRateLimiter.limit(`auth_${ip}`);
+  
+  if (!success) {
+    return NextResponse.json(
+      { error: 'Too many attempts. Please try again later.' },
+      { status: 429 }
+    );
+  }
+  
+  // Continue with authentication logic
+}
+```
+
+## Account Security Features
+
+### Account Lockout
+
+Implement account lockout after failed attempts:
+
+```ts
+// src/lib/account-security.ts
+import { db } from '@/db';
+import { users } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+
+export async function incrementFailedAttempts(userId: string) {
+  await db.update(users)
+    .set({
+      failedLoginAttempts: sql`${users.failedLoginAttempts} + 1`,
+      lastFailedLoginAttempt: new Date(),
+    })
+    .where(eq(users.id, userId));
+}
+
+export async function resetFailedAttempts(userId: string) {
+  await db.update(users)
+    .set({
+      failedLoginAttempts: 0,
+      lastFailedLoginAttempt: null,
+    })
+    .where(eq(users.id, userId));
+}
+
+export async function isAccountLocked(userId: string) {
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+  });
+  
+  if (!user) return false;
+  
+  // Lock account after 5 failed attempts
+  if (user.failedLoginAttempts >= 5) {
+    // Unlock after 30 minutes
+    const lockoutTime = new Date(user.lastFailedLoginAttempt);
+    lockoutTime.setMinutes(lockoutTime.getMinutes() + 30);
+    
+    return new Date() < lockoutTime;
+  }
+  
+  return false;
+}
+```
+
+### Session Monitoring
+
+Monitor active sessions for suspicious activity:
+
+```tsx
+// src/components/user-sessions.tsx
+'use client';
+
+import { useUser } from '@clerk/nextjs';
+
+export function UserSessions() {
+  const { user } = useUser();
+  
+  if (!user) return null;
+  
+  return (
+    <div>
+      <h3>Active Sessions</h3>
+      {user.sessions.map((session) => (
+        <div key={session.id}>
+          <p>Device: {session.userAgent}</p>
+          <p>Last Active: {session.lastActiveAt.toLocaleString()}</p>
+          <p>Current Session: {session.id === user.lastSignInAt?.toString() ? 'Yes' : 'No'}</p>
+          <button 
+            onClick={() => revokeSession(session.id)}
+            className="text-red-500"
+          >
+            Revoke Session
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+## Best Practices
+
+### 1. Secure Cookie Settings
+
+Always use secure cookie settings:
+
+```ts
+// Environment variables
+CLERK_SESSION_COOKIE_SECURE=true
+CLERK_SESSION_COOKIE_HTTP_ONLY=true
+CLERK_SESSION_COOKIE_SAME_SITE=lax
+```
+
+### 2. Regular Security Audits
+
+Regularly audit your authentication setup:
+
+1. Review session expiration settings
+2. Check for unused social login providers
+3. Verify domain whitelisting
+4. Update client secrets regularly
+
+### 3. Monitor Authentication Logs
+
+Monitor authentication events for suspicious activity:
+
+```ts
+// src/lib/auth-logger.ts
+export function logAuthEvent(event: string, userId?: string, metadata?: any) {
+  console.log('Auth Event:', {
+    event,
+    userId,
+    timestamp: new Date().toISOString(),
+    ...metadata,
+  });
+  
+  // In production, send to your logging service
+}
+```
+
+### 4. Implement Proper Logout
+
+Ensure complete session termination:
+
+```tsx
+// src/components/auth/signout-button.tsx
+'use client';
+
+import { useClerk } from '@clerk/nextjs';
+
+export function SignOutButton() {
+  const { signOut } = useClerk();
+  
+  const handleSignOut = async () => {
+    try {
+      // Sign out from all devices
+      await signOut({ redirectUrl: '/' });
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
+  
+  return (
+    <button onClick={handleSignOut}>
+      Sign Out
+    </button>
+  );
+}
+```
+
+## Troubleshooting
+
+### Common Authentication Issues
+
+1. **Session Expiration**: Configure appropriate session timeouts
+2. **OAuth Failures**: Verify client IDs and redirect URLs
+3. **Account Lockouts**: Implement proper unlock mechanisms
+4. **Token Issues**: Check token expiration and refresh logic
+
+### Debugging Authentication
+
+1. Check browser console for authentication errors
+2. Review Clerk dashboard logs
+3. Verify environment variables
+4. Test with a clean browser session
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Content Security Policy"
+  icon="lock"
+  href="/security/csp"
+>
+  Implement CSP for additional protection
+</Card>
+
+<Card
+  title="Database Security"
+  icon="database"
+  href="/security/database-security"
+>
+  Protect your data at the database level
+</Card>
+
+</CardGroup>

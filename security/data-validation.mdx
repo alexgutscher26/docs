@@ -1,0 +1,507 @@
+---
+title: 'Data Validation'
+description: 'Ensure data integrity and prevent injection attacks'
+---
+
+# Data Validation
+
+Data validation is a crucial aspect of building secure applications. This guide covers how to validate data in your StackForge application.
+
+## Overview
+
+All client-side provided data should be validated and sanitized. This includes:
+
+- URL parameters
+- Search params
+- Form data
+- Cookies
+- Any data provided by the user
+
+## Using Zod for Data Validation
+
+StackForge uses Zod for schema validation. Zod provides a simple and powerful way to validate data.
+
+### Basic Zod Usage
+
+```ts
+// src/schema/user-schema.ts
+import { z } from 'zod';
+
+export const userSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1).max(100),
+  email: z.string().email(),
+  age: z.number().min(0).max(150).optional(),
+});
+
+// Validate data
+const validatedData = userSchema.parse(data);
+```
+
+### Safe Parsing
+
+Use `safeParse` to handle validation errors gracefully:
+
+```ts
+const result = userSchema.safeParse(data);
+
+if (!result.success) {
+  // Handle validation errors
+  console.error(result.error);
+} else {
+  // Use validated data
+  const userData = result.data;
+}
+```
+
+## Validating API Route Data
+
+### POST Requests
+
+When handling POST requests, always validate the request body:
+
+```ts
+// src/app/api/posts/route.ts
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const postSchema = z.object({
+  title: z.string().min(1).max(200),
+  content: z.string().min(1),
+  published: z.boolean().default(false),
+});
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    
+    // Validate input
+    const result = postSchema.safeParse(body);
+    
+    if (!result.success) {
+      return NextResponse.json(
+        { 
+          error: 'Invalid input',
+          details: result.error.issues
+        },
+        { status: 400 }
+      );
+    }
+    
+    const { title, content, published } = result.data;
+    
+    // Process validated data
+    const newPost = await db.insert(posts).values({
+      title,
+      content,
+      published,
+      userId: /* get from auth context */
+    }).returning();
+    
+    return NextResponse.json(newPost);
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+### PUT/PATCH Requests
+
+For update operations, you might want to make some fields optional:
+
+```ts
+// src/app/api/posts/[id]/route.ts
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const updatePostSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  content: z.string().min(1).optional(),
+  published: z.boolean().optional(),
+});
+
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const body = await request.json();
+    
+    // Validate input
+    const result = updatePostSchema.safeParse(body);
+    
+    if (!result.success) {
+      return NextResponse.json(
+        { 
+          error: 'Invalid input',
+          details: result.error.issues
+        },
+        { status: 400 }
+      );
+    }
+    
+    // Only update provided fields
+    const updateData = Object.fromEntries(
+      Object.entries(result.data).filter(([_, value]) => value !== undefined)
+    );
+    
+    // Update database
+    const updatedPost = await db.update(posts)
+      .set(updateData)
+      .where(eq(posts.id, parseInt(params.id)))
+      .returning();
+    
+    return NextResponse.json(updatedPost);
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Validating URL Parameters
+
+Always validate URL parameters, especially IDs:
+
+```ts
+// src/app/api/posts/[id]/route.ts
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const postIdSchema = z.coerce.number().positive();
+
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // Validate the ID parameter
+    const result = postIdSchema.safeParse(params.id);
+    
+    if (!result.success) {
+      return NextResponse.json(
+        { error: 'Invalid post ID' },
+        { status: 400 }
+      );
+    }
+    
+    const postId = result.data;
+    
+    // Fetch post
+    const post = await db.query.posts.findFirst({
+      where: eq(posts.id, postId),
+    });
+    
+    if (!post) {
+      return NextResponse.json(
+        { error: 'Post not found' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json(post);
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Validating Query Parameters
+
+Validate query parameters for filtering and pagination:
+
+```ts
+// src/app/api/posts/route.ts
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const querySchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(10),
+  status: z.enum(['draft', 'published']).optional(),
+});
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    
+    // Extract and validate query parameters
+    const queryParams = {
+      page: searchParams.get('page'),
+      limit: searchParams.get('limit'),
+      status: searchParams.get('status'),
+    };
+    
+    const result = querySchema.safeParse(queryParams);
+    
+    if (!result.success) {
+      return NextResponse.json(
+        { 
+          error: 'Invalid query parameters',
+          details: result.error.issues
+        },
+        { status: 400 }
+      );
+    }
+    
+    const { page, limit, status } = result.data;
+    
+    // Build query
+    let query = db.select().from(posts);
+    
+    if (status) {
+      query = query.where(eq(posts.status, status));
+    }
+    
+    // Apply pagination
+    const offset = (page - 1) * limit;
+    const paginatedPosts = await query.limit(limit).offset(offset);
+    
+    return NextResponse.json(paginatedPosts);
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+## Validating Cookies
+
+When using cookies, validate the cookie data:
+
+```ts
+// src/app/some-route/route.ts
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { cookies } from 'next/headers';
+
+const themeSchema = z.enum(['light', 'dark']);
+
+export async function GET() {
+  const cookieStore = await cookies();
+  const themeCookie = cookieStore.get('theme')?.value;
+  
+  // Validate cookie data
+  const result = themeSchema.safeParse(themeCookie);
+  
+  const theme = result.success ? result.data : 'light'; // Default value
+  
+  return NextResponse.json({ theme });
+}
+```
+
+## Form Validation with React Hook Form
+
+StackForge uses React Hook Form with Zod for client-side form validation:
+
+```tsx
+// src/components/posts/post-form.tsx
+'use client';
+
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const postFormSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(200, 'Title is too long'),
+  content: z.string().min(1, 'Content is required'),
+  published: z.boolean(),
+});
+
+type PostFormValues = z.infer<typeof postFormSchema>;
+
+export function PostForm() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<PostFormValues>({
+    resolver: zodResolver(postFormSchema),
+    defaultValues: {
+      published: false,
+    },
+  });
+  
+  const onSubmit = async (data: PostFormValues) => {
+    try {
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create post');
+      }
+      
+      // Handle success
+    } catch (error) {
+      // Handle error
+    }
+  };
+  
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <div>
+        <input
+          {...register('title')}
+          placeholder="Title"
+        />
+        {errors.title && (
+          <span className="text-red-500">{errors.title.message}</span>
+        )}
+      </div>
+      
+      <div>
+        <textarea
+          {...register('content')}
+          placeholder="Content"
+        />
+        {errors.content && (
+          <span className="text-red-500">{errors.content.message}</span>
+        )}
+      </div>
+      
+      <div>
+        <label>
+          <input
+            type="checkbox"
+            {...register('published')}
+          />
+          Published
+        </label>
+      </div>
+      
+      <button type="submit">Create Post</button>
+    </form>
+  );
+}
+```
+
+## Environment Variable Validation
+
+Validate environment variables at startup:
+
+```ts
+// scripts/validate-env.ts
+import { z } from 'zod';
+
+const envSchema = z.object({
+  DATABASE_URL: z.string().url(),
+  NEXT_PUBLIC_APP_NAME: z.string().min(1),
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1),
+  CLERK_SECRET_KEY: z.string().min(1),
+});
+
+export function validateEnv() {
+  try {
+    envSchema.parse(process.env);
+    console.log('Environment variables are valid');
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      console.error('Environment validation failed:');
+      error.issues.forEach((issue) => {
+        console.error(`  ${issue.path.join('.')}: ${issue.message}`);
+      });
+      process.exit(1);
+    }
+    throw error;
+  }
+}
+```
+
+## Best Practices
+
+### 1. Always Validate Input
+
+Never trust data coming from the client. Always validate and sanitize:
+
+```ts
+// ✅ Always validate
+const result = schema.safeParse(input);
+
+if (!result.success) {
+  // Handle validation error
+  return NextResponse.json(
+    { error: 'Invalid input' },
+    { status: 400 }
+  );
+}
+
+const validatedData = result.data;
+```
+
+### 2. Use Type-Safe Validation
+
+Use Zod schemas to ensure type safety:
+
+```ts
+// ✅ Type-safe validation
+const userSchema = z.object({
+  name: z.string(),
+  email: z.string().email(),
+});
+
+type User = z.infer<typeof userSchema>;
+```
+
+### 3. Provide Clear Error Messages
+
+Provide clear, actionable error messages:
+
+```ts
+// ✅ Clear validation messages
+const postSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(200, 'Title is too long'),
+  content: z.string().min(10, 'Content must be at least 10 characters'),
+});
+```
+
+### 4. Validate at Every Layer
+
+Validate data at the API layer, business logic layer, and database layer:
+
+```ts
+// 1. API layer validation
+const apiResult = postSchema.safeParse(requestBody);
+
+// 2. Business logic validation
+const businessRules = validateBusinessRules(validatedData);
+
+// 3. Database constraints
+// Let database enforce constraints as final validation
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Next.js Security Best Practices"
+  icon="shield"
+  href="/security/nextjs-best-practices"
+>
+  Learn more Next.js security practices
+</Card>
+
+<Card
+  title="Authentication Security"
+  icon="key"
+  href="/security/authentication"
+>
+  Secure user authentication and sessions
+</Card>
+
+</CardGroup>

@@ -70,6 +70,18 @@
               "troubleshooting-billing",
               "troubleshooting-deployment"
             ]
+          },
+          {
+            "group": "Security",
+            "pages": [
+              "security/index",
+              "security/nextjs-best-practices",
+              "security/data-validation",
+              "security/csp",
+              "security/authentication",
+              "security/row-level-security",
+              "security/database-security"
+            ]
           }
          ]
       },
@@ -120,7 +132,7 @@
             ]
           }
         ]
-      }
+
     ]
   },
   "logo": {

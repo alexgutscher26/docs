@@ -1,0 +1,301 @@
+---
+title: 'Row Level Security'
+description: 'Implement row-level security policies to protect your data'
+---
+
+# Row Level Security
+
+Row Level Security (RLS) is a database security feature that enables you to restrict access to data at the row level. With RLS, you can control which users can access which rows in a table, providing fine-grained access control for sensitive data.
+
+## Overview
+
+In StackForge, we use PostgreSQL with Drizzle ORM for our database layer. While PostgreSQL doesn't have the same built-in RLS as Supabase, we can implement similar security patterns using PostgreSQL's Row Security Policies feature.
+
+RLS is particularly useful when:
+- Users should only access their own data
+- Team members should only access data belonging to their organization
+- Different roles have different access levels to the same data
+
+## Enabling Row Level Security
+
+To enable RLS on a table in PostgreSQL, you need to enable row level security and then define policies that control access.
+
+### Enable RLS for a Table
+
+First, enable row level security on your table:
+
+```sql
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+```
+
+Once RLS is enabled, by default no one (except the table owner) can access the table. You'll need to create policies to grant access.
+
+### Create Security Policies
+
+Create policies that define who can perform what actions on the table:
+
+```sql
+-- Allow users to read their own documents
+CREATE POLICY "Users can view their own documents" 
+ON documents FOR SELECT 
+TO authenticated 
+USING (user_id = (SELECT auth.uid()));
+
+-- Allow users to insert their own documents
+CREATE POLICY "Users can insert their own documents" 
+ON documents FOR INSERT 
+TO authenticated 
+WITH CHECK (user_id = (SELECT auth.uid()));
+
+-- Allow users to update their own documents
+CREATE POLICY "Users can update their own documents" 
+ON documents FOR UPDATE 
+TO authenticated 
+USING (user_id = (SELECT auth.uid()));
+
+-- Allow users to delete their own documents
+CREATE POLICY "Users can delete their own documents" 
+ON documents FOR DELETE 
+TO authenticated 
+USING (user_id = (SELECT auth.uid()));
+```
+
+## Implementing RLS with Drizzle ORM
+
+In StackForge, we implement RLS at the application level using Drizzle ORM queries combined with authentication context.
+
+### User-Specific Data Access
+
+When querying data, always include the user ID in your queries:
+
+```typescript
+// In your API route or server action
+import { db } from '@/db';
+import { documents } from '@/db/schema';
+import { auth } from '@clerk/nextjs';
+import { eq } from 'drizzle-orm';
+
+export async function GET(request: Request) {
+  const { userId } = auth();
+  
+  if (!userId) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+  
+  try {
+    // Only fetch documents belonging to the authenticated user
+    const userDocuments = await db
+      .select()
+      .from(documents)
+      .where(eq(documents.userId, userId));
+      
+    return Response.json(userDocuments);
+  } catch (error) {
+    return new Response('Internal Server Error', { status: 500 });
+  }
+}
+```
+
+### Team-Based Access Control
+
+For team-based applications, you might want to implement organization-level access control:
+
+```typescript
+// Check if user belongs to an organization before allowing access
+import { db } from '@/db';
+import { documents, memberships } from '@/db/schema';
+import { auth } from '@clerk/nextjs';
+import { and, eq } from 'drizzle-orm';
+
+export async function checkUserOrganizationAccess(
+  userId: string, 
+  organizationId: string
+) {
+  const membership = await db
+    .select()
+    .from(memberships)
+    .where(
+      and(
+        eq(memberships.userId, userId),
+        eq(memberships.organizationId, organizationId)
+      )
+    );
+    
+  return membership.length > 0;
+}
+```
+
+## Common RLS Patterns
+
+### 1. User-Owned Data
+
+The most common pattern is restricting access to data owned by the authenticated user:
+
+```sql
+-- PostgreSQL policy
+CREATE POLICY "Users can access their own data"
+ON user_data FOR ALL
+TO authenticated
+USING (user_id = (SELECT auth.uid()));
+```
+
+```typescript
+// Application-level check
+const userData = await db
+  .select()
+  .from(userData)
+  .where(eq(userData.userId, userId));
+```
+
+### 2. Role-Based Access
+
+For role-based access control, check user permissions:
+
+```sql
+-- PostgreSQL policy with role check
+CREATE POLICY "Admins can access all data"
+ON sensitive_data FOR ALL
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM user_roles 
+    WHERE user_roles.user_id = auth.uid() 
+    AND user_roles.role = 'admin'
+  )
+);
+```
+
+```typescript
+// Application-level role check
+import { and, eq, inArray } from 'drizzle-orm';
+
+const isAdmin = await db
+  .select()
+  .from(userRoles)
+  .where(
+    and(
+      eq(userRoles.userId, userId),
+      eq(userRoles.role, 'admin')
+    )
+  );
+
+if (isAdmin.length > 0) {
+  // Admin can access all data
+  const allData = await db.select().from(sensitiveData);
+} else {
+  // Regular users can only access their own data
+  const userData = await db
+    .select()
+    .from(sensitiveData)
+    .where(eq(sensitiveData.userId, userId));
+}
+```
+
+### 3. Organization/Team Access
+
+For multi-tenant applications, restrict access by organization:
+
+```sql
+-- PostgreSQL policy for organization access
+CREATE POLICY "Members can access organization data"
+ON organization_data FOR ALL
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM memberships 
+    WHERE memberships.user_id = auth.uid() 
+    AND memberships.organization_id = organization_data.org_id
+  )
+);
+```
+
+```typescript
+// Application-level organization check
+const userOrganizations = await db
+  .select({ orgId: memberships.organizationId })
+  .from(memberships)
+  .where(eq(memberships.userId, userId));
+
+const orgIds = userOrganizations.map(org => org.orgId);
+
+const orgData = await db
+  .select()
+  .from(organizationData)
+  .where(inArray(organizationData.orgId, orgIds));
+```
+
+## Testing RLS Policies
+
+It's crucial to test your RLS policies to ensure they work as expected.
+
+### Manual Testing
+
+1. Create test users with different roles
+2. Insert test data belonging to different users
+3. Verify that each user can only access their own data
+4. Test edge cases and try to bypass restrictions
+
+### Automated Testing
+
+Create tests that verify your RLS policies:
+
+```typescript
+// Example test for user data isolation
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { db } from '@/db';
+import { users, documents } from '@/db/schema';
+
+describe('Row Level Security', () => {
+  let user1Id: string;
+  let user2Id: string;
+  
+  beforeAll(async () => {
+    // Create test users
+    const user1 = await db.insert(users).values({ /* user data */ }).returning();
+    const user2 = await db.insert(users).values({ /* user data */ }).returning();
+    
+    user1Id = user1[0].id;
+    user2Id = user2[0].id;
+    
+    // Insert documents for each user
+    await db.insert(documents).values({
+      userId: user1Id,
+      title: 'User 1 Document',
+      content: 'Content for user 1'
+    });
+    
+    await db.insert(documents).values({
+      userId: user2Id,
+      title: 'User 2 Document',
+      content: 'Content for user 2'
+    });
+  });
+  
+  it('should only allow users to access their own documents', async () => {
+    // Test user 1 can only see their document
+    const user1Docs = await getDocumentsForUser(user1Id);
+    expect(user1Docs).toHaveLength(1);
+    expect(user1Docs[0].title).toBe('User 1 Document');
+    
+    // Test user 2 can only see their document
+    const user2Docs = await getDocumentsForUser(user2Id);
+    expect(user2Docs).toHaveLength(1);
+    expect(user2Docs[0].title).toBe('User 2 Document');
+  });
+});
+```
+
+## Best Practices
+
+1. **Always enable RLS**: Enable RLS on all tables that contain user-specific or sensitive data
+2. **Fail securely**: By default, deny access and explicitly grant permissions
+3. **Test thoroughly**: Test all RLS policies with different user roles and edge cases
+4. **Combine with application-level checks**: Use both database-level and application-level security
+5. **Monitor access patterns**: Log and monitor access to sensitive data
+6. **Regularly audit policies**: Review and update RLS policies as your application evolves
+
+## Additional Resources
+
+- [PostgreSQL Row Security Policies](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)
+- [Drizzle ORM Documentation](https://orm.drizzle.team/)
+- [Clerk Authentication Documentation](https://clerk.dev/docs)
