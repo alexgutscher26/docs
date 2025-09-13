@@ -1,690 +1,122 @@
 ---
 title: 'Search Engine Optimization'
-description: 'Optimize your StackForge application for search engines'
+description: 'Improve your StackForge application\'s search engine optimization'
 ---
 
 # Search Engine Optimization
 
-Search Engine Optimization (SEO) is crucial for driving organic traffic to your StackForge application. This guide covers best practices and techniques for optimizing your application for search engines.
+Search Engine Optimization (SEO) is crucial for driving organic traffic to your StackForge application. This guide covers best practices for optimizing your application for search engines.
 
 ## Overview
 
-StackForge provides a solid foundation for SEO, but there are several areas where you can further optimize your application to improve search engine rankings. This guide covers on-page SEO, technical SEO, and content optimization strategies.
-
-## On-Page SEO
-
-### Metadata Optimization
-
-Implement proper metadata for each page:
-
-```tsx
-// src/app/(marketing)/page.tsx
-import { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: 'StackForge - AI-Powered Social Media Marketing Platform',
-  description: 'Create engaging social media content with AI. Publish to all platforms with one click. Track performance with advanced analytics.',
-  keywords: ['AI', 'social media', 'marketing', 'content creation', 'analytics'],
-  openGraph: {
-    title: 'StackForge - AI-Powered Social Media Marketing',
-    description: 'Create engaging social media content with AI. Publish to all platforms with one click.',
-    url: 'https://yourdomain.com',
-    siteName: 'StackForge',
-    images: [
-      {
-        url: 'https://yourdomain.com/og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'StackForge - AI-Powered Social Media Marketing',
-      },
-    ],
-    locale: 'en_US',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'StackForge - AI-Powered Social Media Marketing',
-    description: 'Create engaging social media content with AI. Publish to all platforms with one click.',
-    images: ['https://yourdomain.com/twitter-image.jpg'],
-  },
-};
-
-export default function HomePage() {
-  return (
-    // Page content
-  );
-}
-```
-
-### Dynamic Metadata
-
-Generate dynamic metadata for dynamic pages:
-
-```tsx
-// src/app/(marketing)/blog/[slug]/page.tsx
-import { db } from '@/db';
-import { blogPosts } from '@/db/schema';
-import { eq } from 'drizzle-orm';
-import { notFound } from 'next/navigation';
-import { Metadata } from 'next';
-
-type Props = {
-  params: { slug: string };
-};
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const post = await db
-    .select()
-    .from(blogPosts)
-    .where(eq(blogPosts.slug, params.slug))
-    .limit(1);
-
-  if (!post.length) {
-    return {
-      title: 'Post Not Found',
-    };
-  }
-
-  return {
-    title: `${post[0].title} - StackForge Blog`,
-    description: post[0].excerpt,
-    openGraph: {
-      title: post[0].title,
-      description: post[0].excerpt,
-      type: 'article',
-      publishedTime: post[0].createdAt.toISOString(),
-      images: [
-        {
-          url: `/api/og/blog/${post[0].id}`,
-          width: 1200,
-          height: 630,
-          alt: post[0].title,
-        },
-      ],
-    },
-  };
-}
-
-export default async function BlogPostPage({ params }: Props) {
-  // Page content
-}
-```
-
-### Semantic HTML Structure
-
-Use proper HTML semantics for better SEO:
-
-```tsx
-// src/components/marketing/hero-section.tsx
-export function HeroSection() {
-  return (
-    <section className="py-20">
-      <div className="container">
-        <h1 className="text-4xl md:text-6xl font-bold text-center mb-6">
-          AI-Powered Social Media Marketing
-        </h1>
-        <p className="text-xl text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Create engaging content, publish to all platforms, and track performance with advanced analytics.
-        </p>
-        <div className="flex justify-center gap-4">
-          <button className="btn btn-primary">Get Started</button>
-          <button className="btn btn-secondary">Learn More</button>
-        </div>
-      </div>
-    </section>
-  );
-}
-```
-
-## Technical SEO
-
-### XML Sitemaps
-
-Generate XML sitemaps for your content:
-
-```ts
-// src/app/sitemap.ts
-import { MetadataRoute } from 'next';
-import { db } from '@/db';
-import { blogPosts } from '@/db/schema';
-import { eq } from 'drizzle-orm';
-
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://yourdomain.com';
-
-  // Static pages
-  const staticPages: MetadataRoute.Sitemap = [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/features`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/pricing`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/blog`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.7,
-    },
-  ];
-
-  // Dynamic blog posts
-  const posts = await db
-    .select()
-    .from(blogPosts)
-    .where(eq(blogPosts.published, true));
-
-  const blogPages: MetadataRoute.Sitemap = posts.map((post) => ({
-    url: `${baseUrl}/blog/${post.slug}`,
-    lastModified: post.updatedAt,
-    changeFrequency: 'monthly',
-    priority: 0.6,
-  }));
-
-  return [...staticPages, ...blogPages];
-}
-```
-
-### Robots.txt
-
-Create a robots.txt file:
-
-```txt
-# src/app/robots.txt
-User-Agent: *
-Allow: /
-
-Sitemap: https://yourdomain.com/sitemap.xml
-```
-
-### Structured Data
-
-Implement structured data for rich results:
-
-```tsx
-// src/components/blog/blog-post-json-ld.tsx
-'use client';
-
-import { BlogPosting } from 'schema-dts';
-import { JsonLd } from 'react-schemaorg';
-
-export function BlogPostJsonLd({
-  title,
-  description,
-  author,
-  datePublished,
-  dateModified,
-  image,
-}: {
-  title: string;
-  description: string;
-  author: string;
-  datePublished: string;
-  dateModified: string;
-  image: string;
-}) {
-  const blogPosting: BlogPosting = {
-    '@type': 'BlogPosting',
-    headline: title,
-    description: description,
-    author: {
-      '@type': 'Person',
-      name: author,
-    },
-    datePublished: datePublished,
-    dateModified: dateModified,
-    image: image,
-    publisher: {
-      '@type': 'Organization',
-      name: 'StackForge',
-      logo: {
-        '@type': 'ImageObject',
-        url: 'https://yourdomain.com/logo.png',
-      },
-    },
-  };
-
-  return <JsonLd item={blogPosting} />;
-}
-```
-
-## Content Optimization
-
-### Keyword Research
-
-Perform keyword research to identify relevant terms:
-
-1. Use tools like Google Keyword Planner, Ahrefs, or SEMrush
-2. Identify primary and secondary keywords
-3. Analyze competitor content
-4. Create content around keyword themes
-
-### Content Quality
-
-Focus on creating high-quality, valuable content:
-
-```tsx
-// src/components/blog/table-of-contents.tsx
-'use client';
-
-import { useEffect, useState } from 'react';
-
-export function TableOfContents() {
-  const [headings, setHeadings] = useState<HTMLHeadingElement[]>([]);
-
-  useEffect(() => {
-    const elements = Array.from(
-      document.querySelectorAll('h2, h3')
-    ) as HTMLHeadingElement[];
-    setHeadings(elements);
-  }, []);
-
-  return (
-    <nav className="toc">
-      <h3 className="font-semibold mb-2">Table of Contents</h3>
-      <ul className="space-y-1">
-        {headings.map((heading, index) => (
-          <li 
-            key={index} 
-            className={`pl-${(heading.tagName === 'H3' ? 4 : 0)}`}
-          >
-            <a 
-              href={`#${heading.id}`} 
-              className="text-blue-600 hover:underline"
-            >
-              {heading.textContent}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
-}
-```
-
-### Internal Linking
-
-Implement strategic internal linking:
-
-```tsx
-// src/components/blog/internal-link.tsx
-import Link from 'next/link';
-
-export function InternalLink({
-  href,
-  children
-}: {
-  href: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link 
-      href={href} 
-      className="text-blue-600 hover:underline font-medium"
-    >
-      {children}
-    </Link>
-  );
-}
-```
-
-## Performance for SEO
-
-### Core Web Vitals
-
-Optimize for Core Web Vitals:
-
-```tsx
-// src/components/shared/image-optimizer.tsx
-'use client';
-
-import Image from 'next/image';
-import { useState, useEffect } from 'react';
-
-export function OptimizedImage({
-  src,
-  alt,
-  width,
-  height,
-  priority = false
-}: {
-  src: string;
-  alt: string;
-  width: number;
-  height: number;
-  priority?: boolean;
-}) {
-  const [isLoading, setIsLoading] = useState(true);
-
-  return (
-    <div className="image-container">
-      <Image
-        src={src}
-        alt={alt}
-        width={width}
-        height={height}
-        priority={priority}
-        onLoad={() => setIsLoading(false)}
-        className={`transition-opacity duration-300 ${
-          isLoading ? 'opacity-0' : 'opacity-100'
-        }`}
-      />
-      {isLoading && (
-        <div 
-          className="skeleton-loader"
-          style={{ width, height }}
-        />
-      )}
-    </div>
-  );
-}
-```
-
-### Lazy Loading
-
-Implement lazy loading for non-critical resources:
-
-```tsx
-// src/components/shared/lazy-component.tsx
-'use client';
-
-import { useState, useEffect } from 'react';
-
-export function LazyComponent({
-  children,
-  placeholder
-}: {
-  children: React.ReactNode;
-  placeholder?: React.ReactNode;
-}) {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    // Observe the component's parent element
-    const element = document.getElementById('lazy-component');
-    if (element) {
-      observer.observe(element);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div id="lazy-component">
-      {isVisible ? children : placeholder || <div>Loading...</div>}
-    </div>
-  );
-}
-```
-
-## Mobile SEO
-
-### Responsive Design
-
-Ensure your application is mobile-friendly:
-
-```css
-/* src/styles/globals.css */
-@media (max-width: 768px) {
-  .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-  
-  .text-4xl {
-    font-size: 2.25rem;
-  }
-  
-  .text-xl {
-    font-size: 1.125rem;
-  }
-}
-```
-
-### Mobile-First Approach
-
-Design with mobile users in mind:
-
-```tsx
-// src/components/shared/mobile-nav.tsx
-'use client';
-
-import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
-
-export function MobileNav() {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <div className="md:hidden">
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="p-2"
-        aria-label="Toggle menu"
-      >
-        {isOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
-      
-      {isOpen && (
-        <div className="absolute top-full left-0 right-0 bg-background border-t">
-          <nav className="flex flex-col p-4 space-y-4">
-            <a href="/">Home</a>
-            <a href="/features">Features</a>
-            <a href="/pricing">Pricing</a>
-            <a href="/blog">Blog</a>
-          </nav>
-        </div>
-      )}
-    </div>
-  );
-}
-```
-
-## Analytics and Monitoring
-
-### SEO Analytics
-
-Track SEO performance with analytics:
-
-```ts
-// src/lib/analytics/seo-tracking.ts
-export function trackPageView(url: string, title: string) {
-  // Google Analytics
-  if (typeof window !== 'undefined' && (window as any).gtag) {
-    (window as any).gtag('config', process.env.NEXT_PUBLIC_GA_ID, {
-      page_path: url,
-      page_title: title,
-    });
-  }
-}
-
-export function trackEvent(
-  action: string,
-  category: string,
-  label: string,
-  value?: number
-) {
-  if (typeof window !== 'undefined' && (window as any).gtag) {
-    (window as any).gtag('event', action, {
-      event_category: category,
-      event_label: label,
-      value: value,
-    });
-  }
-}
-```
-
-### SEO Audit Tools
-
-Regularly audit your SEO with tools:
-
-```bash
-# Install Lighthouse for SEO audits
-npm install -g lighthouse
-
-# Run SEO audit
-lighthouse https://yourdomain.com --only-categories=seo --output=json --output-path=seo-report.json
-```
-
-## Best Practices
-
-### 1. Content Freshness
-
-- Regularly update content
-- Add publication dates
-- Implement content review schedules
-
-### 2. URL Structure
-
-- Use descriptive URLs
-- Implement consistent URL patterns
-- Use hyphens instead of underscores
-
-### 3. Image Optimization
-
-- Use descriptive file names
-- Add alt text to all images
-- Compress images appropriately
-
-### 4. Page Speed
-
-- Optimize images and assets
-- Minimize JavaScript bundles
-- Implement caching strategies
-
-### 5. User Experience
-
-- Ensure fast loading times
-- Make navigation intuitive
-- Provide clear calls-to-action
-
-## Common SEO Issues
-
-### Duplicate Content
-
-Prevent duplicate content issues:
-
-```tsx
-// Implement canonical URLs
-import { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  alternates: {
-    canonical: 'https://yourdomain.com/original-page',
-  },
-};
-```
-
-### Broken Links
-
-Implement link checking:
-
-```ts
-// src/lib/seo/link-checker.ts
-export async function checkBrokenLinks() {
-  const pages = await getAllPages();
-  const brokenLinks = [];
-
-  for (const page of pages) {
-    const links = extractLinksFromPage(page);
-    for (const link of links) {
-      if (await isBrokenLink(link)) {
-        brokenLinks.push({ page, link });
-      }
-    }
-  }
-
-  return brokenLinks;
-}
-```
-
-### Missing Metadata
-
-Ensure all pages have proper metadata:
-
-```tsx
-// src/components/seo/page-metadata.tsx
-import { Metadata } from 'next';
-
-export function PageMetadata({
-  title,
-  description,
-  image,
-  url
-}: {
-  title: string;
-  description: string;
-  image?: string;
-  url: string;
-}) {
-  return (
-    <head>
-      <title>{title}</title>
-      <meta name="description" content={description} />
-      
-      {/* Open Graph */}
-      <meta property="og:title" content={title} />
-      <meta property="og:description" content={description} />
-      <meta property="og:url" content={url} />
-      {image && <meta property="og:image" content={image} />}
-      
-      {/* Twitter */}
-      <meta name="twitter:title" content={title} />
-      <meta name="twitter:description" content={description} />
-      {image && <meta name="twitter:image" content={image} />}
-    </head>
-  );
-}
-```
-
-## Testing SEO
-
-### Automated Testing
-
-Test SEO elements:
-
-```ts
-// __tests__/seo.test.ts
-import { test, expect } from '@playwright/test';
-
-test('homepage has proper SEO metadata', async ({ page }) => {
-  await page.goto('/');
-  
-  // Check title
-  const title = await page.title();
-  expect(title).toContain('StackForge');
-  
-  // Check meta description
-  const description = await page.getAttribute('meta[name="description"]', 'content');
-  expect(description).toBeTruthy();
-  
-  // Check Open Graph tags
-  const ogTitle = await page.getAttribute('meta[property="og:title"]', 'content');
-  expect(ogTitle).toBeTruthy();
-});
-```
+StackForge is already optimized for SEO out of the box, but there are several areas where you can further optimize your application to improve search engine rankings. This guide covers SEO best practices, sitemap configuration, and content strategies.
+
+## SEO Best Practices
+
+### Content is King
+
+The most important thing you can do to improve your application's SEO is to create high-quality content. No amount of technical optimization can replace good content. Make sure your content is:
+
+- Relevant to your target audience
+- Useful and informative
+- Engaging and well-structured
+- Updated regularly
+
+### Keyword Optimization
+
+Use descriptive titles and meta descriptions for your pages. Titles and meta descriptions are the first things users see in search results, so make sure they are descriptive and relevant to the content on the page. Use keywords that your customers are likely to search for.
+
+### Image Optimization
+
+Use descriptive filenames and alt text for your images. This helps search engines understand what the image is about and can improve your website's ranking in image search results.
+
+### Website Speed
+
+While less critical than content, website speed still matters for SEO. Make sure your website loads quickly and is mobile-friendly. StackForge is built with performance in mind, but you can use tools like Google's PageSpeed Insights to check your website's speed and get suggestions for improvement.
+
+### Mobile Optimization
+
+Make sure your website is mobile-friendly. Google ranks mobile-friendly websites higher in search results. StackForge uses responsive design principles to ensure your application works well on all devices.
+
+## Sitemap Configuration
+
+StackForge generates a sitemap to help search engines understand your website's structure and index your pages.
+
+### Adding Pages to the Sitemap
+
+Generally speaking, Google will find your pages without a sitemap as it follows links on your website. However, you can add pages to the sitemap by modifying the sitemap configuration.
+
+If you add more static pages to your website, you can add them to the sitemap configuration. For example, if you add a new page at `/about`, you can add it to the sitemap configuration.
+
+All the blog and documentation pages are automatically added to the sitemap. You don't need to add them manually.
+
+### Submitting Your Sitemap to Google Search Console
+
+Once you've optimized your website for SEO, you can add it to Google Search Console. Google Search Console is a free tool that helps you monitor and maintain your website's presence in Google search results.
+
+To submit your sitemap:
+
+1. Verify your website in Google Search Console
+2. Go to the Sitemaps section
+3. Add the URL of your sitemap: `https://your-website.com/sitemap.xml`
+
+## Backlinks
+
+Backlinks are links from other websites to your website and are considered one of the most important factors in SEO. The more backlinks you have from high-quality websites, the higher your website will rank in search results.
+
+### Building Backlinks
+
+You can get backlinks by:
+
+1. **Creating high-quality content** that other websites want to link to
+2. **Guest posting** on other websites in your niche
+3. **Link building** by reaching out to other websites
+4. **Social media** sharing to reach a wider audience
+5. **Directory submissions** to relevant online directories
+
+## Content Strategy
+
+When it comes to internal factors, content is king. Focus on creating content that helps your customers solve problems related to your SaaS offering.
+
+### Blog Content
+
+Use the blog feature in StackForge to create high-quality content that will help your website rank higher in search results and help your customers find what they're looking for.
+
+Think about how your customers will search for the problem your SaaS is solving. For example, if you're building a social media marketing tool, you might want to write about:
+
+- Social media marketing best practices
+- How to create engaging content
+- Platform-specific tips and tricks
+- Analytics and performance measurement
+
+### Documentation Content
+
+Your documentation is another important source of SEO-friendly content. Make sure your documentation is comprehensive, well-organized, and answers common questions your users might have.
+
+## Indexing and Ranking Timeline
+
+New websites can take a while to get indexed by search engines. It can take anywhere from a few days to a few weeks (in some cases, even months!) for your website to show up in search results. Be patient and keep updating your content and optimizing your website for search engines.
+
+## Monitoring SEO Performance
+
+### Google Search Console
+
+Google Search Console is a free tool that helps you monitor and maintain your website's presence in Google search results. Use it to:
+
+- Check your website's indexing status
+- Submit sitemaps
+- Get insights into how Google sees your website
+- Identify and fix crawl errors
+- Monitor your search performance
+
+### Analytics Tools
+
+Use analytics tools to track your SEO performance:
+
+- Monitor organic traffic growth
+- Track keyword rankings
+- Analyze user behavior on your site
+- Identify popular content
 
 ## Next Steps
 
@@ -699,11 +131,11 @@ test('homepage has proper SEO metadata', async ({ page }) => {
 </Card>
 
 <Card
-  title="Access Control"
-  icon="lock"
-  href="/development/access-control"
+  title="Content Management"
+  icon="file-text"
+  href="/development/content-management"
 >
-  Implement roles and permissions in your application
+  Learn about managing content in your application
 </Card>
 
 </CardGroup>
