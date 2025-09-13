@@ -1,0 +1,221 @@
+---
+title: 'State Management'
+description: 'Learn how StackForge implements state management with TanStack Query and Zustand'
+---
+
+import { File, Package } from 'lucide-react';
+
+# State Management
+
+StackForge implements a comprehensive state management solution using two complementary libraries:
+
+1. **TanStack Query** for server state management (data fetching, caching, synchronization)
+2. **Zustand** for local/UI state management (UI preferences, theme, etc.)
+
+This separation of concerns ensures optimal performance and maintainability of the application.
+
+## Why This Approach?
+
+### Server State vs. Local State
+
+- **Server State**: Data that comes from an external source (API, database) and needs to be synchronized with the server
+- **Local State**: Data that is specific to the client and doesn't need to be synchronized with a server
+
+### Benefits of Separation
+
+- **Performance**: Proper caching and background updates for server data
+- **Consistency**: Automatic synchronization with server data
+- **Maintainability**: Clear separation of concerns
+- **Developer Experience**: Specialized tools for each type of state
+
+## TanStack Query (Server State)
+
+TanStack Query is used for all server state management in StackForge, including data fetching, caching, and synchronization.
+
+### Key Features
+
+- Automatic caching and background updates
+- Deduplication of requests
+- Pagination and infinite scrolling support
+- Error handling and retries
+- Devtools for debugging in development
+
+### Configuration
+
+The TanStack Query client is configured with optimized settings in `src/lib/query-client.tsx`:
+
+```ts
+const createQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        // Default stale time of 30 seconds to reduce unnecessary refetches
+        staleTime: 30 * 1000,
+        // Enable refetching on window focus for data consistency
+        refetchOnWindowFocus: true,
+        // Retry failed queries up to 3 times
+        retry: 3,
+        // Cache query results for 5 minutes
+        cacheTime: 5 * 60 * 1000,
+      },
+    },
+  });
+```
+
+### Usage in Components
+
+```tsx
+'use client';
+
+import { usePosts } from '@/hooks/use-posts';
+
+export const PostsList = () => {
+  const { data, isLoading, isError } = usePosts(1, 10);
+
+  if (isLoading) return <div>Loading...</div>;
+  if (isError) return <div>Error loading posts</div>;
+
+  return (
+    <div>
+      {data?.data.map(post => (
+        <div key={post.id}>{post.content}</div>
+      ))}
+    </div>
+  );
+};
+```
+
+## Zustand (Local State)
+
+Zustand is used for all local state management in StackForge, including UI preferences and user settings.
+
+### Key Features
+
+- Lightweight and fast
+- Easy to use API
+- Persistence middleware for storing preferences
+- TypeScript support
+
+### Stores
+
+StackForge includes two main stores:
+
+1. **UI Store** (`src/stores/ui-store.ts`) - Manages UI-related state
+2. **User Preferences Store** (`src/stores/user-preferences-store.ts`) - Manages user-specific preferences
+
+### UI Store
+
+The UI store manages state such as:
+
+- Dark mode preference
+- Sidebar open/close state
+- Loading states
+- Toast notifications
+
+```ts
+interface UIState {
+  // Theme management
+  isDarkMode: boolean;
+  toggleDarkMode: () => void;
+
+  // Sidebar state
+  isSidebarOpen: boolean;
+  toggleSidebar: () => void;
+
+  // Loading states
+  isLoading: boolean;
+  setLoading: (loading: boolean) => void;
+}
+```
+
+### User Preferences Store
+
+The user preferences store manages state such as:
+
+- Dashboard view (grid/list)
+- Analytics period
+- Notification preferences
+- Preferred platforms
+
+```ts
+interface UserPreferencesState {
+  // Dashboard preferences
+  dashboardView: 'grid' | 'list';
+  setDashboardView: (view: 'grid' | 'list') => void;
+
+  // Analytics preferences
+  analyticsPeriod: '7d' | '30d' | '90d' | '1y';
+  setAnalyticsPeriod: (period: '7d' | '30d' | '90d' | '1y') => void;
+
+  // Notification preferences
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  setEmailNotifications: (enabled: boolean) => void;
+}
+```
+
+### Usage in Components
+
+```tsx
+'use client';
+
+import { useUI } from '@/hooks/use-ui-store';
+
+const ThemeToggle = () => {
+  const { isDarkMode, toggleDarkMode } = useUI();
+
+  return (
+    <button onClick={toggleDarkMode}>
+      {isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+    </button>
+  );
+};
+```
+
+## Custom Hooks
+
+StackForge provides custom hooks to abstract the underlying state management libraries and provide a consistent API.
+
+### Server State Hooks
+
+Located in `src/hooks/use-posts.ts`:
+
+- `usePosts` - Fetch posts with pagination
+- `usePost` - Fetch a single post
+- `useCreatePost` - Create a new post
+- `useUpdatePost` - Update an existing post
+- `useDeletePost` - Delete a post
+
+### Local State Hooks
+
+Located in `src/hooks/`:
+
+- `useUI` - Access UI store state
+- `useUserPreferences` - Access user preferences store state
+
+## Devtools
+
+The TanStack Query Devtools are enabled in development mode and can be accessed by clicking the cog icon in the bottom left corner of the browser window.
+
+## Best Practices
+
+1. **Separate Concerns**: Use TanStack Query for server data, Zustand for local state
+2. **Custom Hooks**: Create custom hooks for complex state logic
+3. **Persistence**: Use Zustand's persist middleware for important UI preferences
+4. **Type Safety**: Always type your stores and API responses
+5. **Error Handling**: Implement proper error handling for API calls
+6. **Loading States**: Provide feedback for loading and error states
+
+## Adding New State
+
+### For Server State (TanStack Query)
+
+1. Add new API service functions in `src/lib/api.ts`
+2. Create custom hooks in `src/hooks/` (e.g., `use-new-feature.ts`)
+3. Use the hooks in your components
+
+### For Local State (Zustand)
+
+1. Create a new store in `src/stores/` (e.g., `new-feature-store.ts`)
+2. Create a custom hook in `src/hooks/` (e.g., `use-new-feature-store.ts`)
+3. Use the hook in your components

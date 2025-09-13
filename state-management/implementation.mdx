@@ -1,0 +1,646 @@
+---
+title: 'Implementation Details'
+description: 'Detailed implementation of state management in StackForge'
+---
+
+# Implementation Details
+
+This page provides detailed information about how state management is implemented in StackForge.
+
+## TanStack Query Implementation
+
+### Query Client Configuration
+
+The TanStack Query client is configured in `src/lib/query-client.tsx` with the following settings:
+
+```tsx
+import {
+  QueryClient,
+  QueryClientProvider,
+  type QueryClientConfig,
+} from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { ReactNode } from 'react';
+
+// Configure TanStack Query client with default settings
+const createQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        // Default stale time of 30 seconds to reduce unnecessary refetches
+        staleTime: 30 * 1000,
+        // Enable refetching on window focus for data consistency
+        refetchOnWindowFocus: true,
+        // Retry failed queries up to 3 times
+        retry: 3,
+        // Cache query results for 5 minutes
+        cacheTime: 5 * 60 * 1000,
+      },
+    },
+  });
+
+// Create a singleton instance of the query client
+let browserQueryClient: QueryClient | undefined = undefined;
+
+// Function to get the query client instance
+export function getQueryClient() {
+  if (typeof window === 'undefined') {
+    // Server: always create a new query client
+    return createQueryClient();
+  } else {
+    // Browser: use a singleton pattern to keep the same client
+    if (!browserQueryClient) {
+      browserQueryClient = createQueryClient();
+    }
+    return browserQueryClient;
+  }
+}
+
+// Props for the QueryProvider component
+interface QueryProviderProps {
+  children: ReactNode;
+}
+
+// QueryProvider component to wrap the app with TanStack Query context
+export function QueryProvider({ children }: QueryProviderProps) {
+  const queryClient = getQueryClient();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
+  );
+}
+```
+
+### API Service Functions
+
+API service functions are defined in `src/lib/api.ts`:
+
+```ts
+// Define types for our data
+export interface Post {
+  id: string;
+  userId: string;
+  content: string;
+  platform: string;
+  status: string;
+  scheduledAt: string | null;
+  publishedAt: string | null;
+  engagement: number;
+  likes: number;
+  shares: number;
+  comments: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PostCreateInput {
+  content: string;
+  platform: string;
+  scheduledAt?: string;
+}
+
+export interface PostUpdateInput {
+  content?: string;
+  platform?: string;
+  status?: string;
+  scheduledAt?: string | null;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+// Base API call function
+const apiCall = async (url: string, options: RequestInit = {}) => {
+  const response = await fetch(url, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `API call failed: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return response.json();
+};
+
+// Posts API functions
+export const postsApi = {
+  // Get all posts with pagination and filtering
+  getPosts: async (
+    page: number = 1,
+    limit: number = 10,
+    status?: string,
+    platform?: string,
+    search?: string
+  ): Promise<PaginatedResponse<Post>> => {
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('limit', limit.toString());
+
+    if (status) params.append('status', status);
+    if (platform) params.append('platform', platform);
+    if (search) params.append('search', search);
+
+    return apiCall(`/api/posts?${params.toString()}`);
+  },
+
+  // Get a single post by ID
+  getPost: async (id: string): Promise<Post> => {
+    return apiCall(`/api/posts/${id}`);
+  },
+
+  // Create a new post
+  createPost: async (data: PostCreateInput): Promise<Post> => {
+    return apiCall('/api/posts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Update an existing post
+  updatePost: async (id: string, data: PostUpdateInput): Promise<Post> => {
+    return apiCall(`/api/posts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // Delete a post
+  deletePost: async (id: string): Promise<void> => {
+    return apiCall(`/api/posts/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+```
+
+### Custom Hooks
+
+Custom hooks are defined in `src/hooks/use-posts.ts`:
+
+```ts
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  postsApi,
+  type Post,
+  type PostCreateInput,
+  type PostUpdateInput,
+} from '@/lib/api';
+
+// Query keys for posts
+const POSTS_QUERY_KEY = 'posts';
+const POST_QUERY_KEY = 'post';
+
+// Custom hook to fetch posts with pagination and filtering
+export const usePosts = (
+  page: number = 1,
+  limit: number = 10,
+  status?: string,
+  platform?: string,
+  search?: string
+) => {
+  return useQuery({
+    queryKey: [POSTS_QUERY_KEY, page, limit, status, platform, search],
+    queryFn: () => postsApi.getPosts(page, limit, status, platform, search),
+    keepPreviousData: true, // Keep previous data while fetching new data
+  });
+};
+
+// Custom hook to fetch a single post by ID
+export const usePost = (id: string) => {
+  return useQuery({
+    queryKey: [POST_QUERY_KEY, id],
+    queryFn: () => postsApi.getPost(id),
+    enabled: !!id, // Only run query if ID exists
+  });
+};
+
+// Custom hook to create a new post
+export const useCreatePost = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: PostCreateInput) => postsApi.createPost(data),
+    onSuccess: () => {
+      // Invalidate and refetch posts list to show the new post
+      queryClient.invalidateQueries([POSTS_QUERY_KEY]);
+    },
+  });
+};
+
+// Custom hook to update an existing post
+export const useUpdatePost = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: PostUpdateInput }) =>
+      postsApi.updatePost(id, data),
+    onSuccess: updatedPost => {
+      // Update the post in the cache
+      queryClient.setQueryData([POST_QUERY_KEY, updatedPost.id], updatedPost);
+      // Invalidate posts list to reflect changes
+      queryClient.invalidateQueries([POSTS_QUERY_KEY]);
+    },
+  });
+};
+
+// Custom hook to delete a post
+export const useDeletePost = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => postsApi.deletePost(id),
+    onSuccess: (_, deletedPostId) => {
+      // Remove the post from the cache
+      queryClient.removeQueries([POST_QUERY_KEY, deletedPostId]);
+      // Invalidate posts list to reflect changes
+      queryClient.invalidateQueries([POSTS_QUERY_KEY]);
+    },
+  });
+};
+```
+
+## Zustand Implementation
+
+### UI Store
+
+The UI store is implemented in `src/stores/ui-store.ts`:
+
+```ts
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+// Define the UI state structure
+interface UIState {
+  // Theme management
+  isDarkMode: boolean;
+  toggleDarkMode: () => void;
+
+  // Sidebar state
+  isSidebarOpen: boolean;
+  toggleSidebar: () => void;
+  closeSidebar: () => void;
+
+  // Loading states
+  isLoading: boolean;
+  setLoading: (loading: boolean) => void;
+
+  // Toast notifications
+  toast: {
+    message: string;
+    type: 'success' | 'error' | 'warning' | 'info';
+    isVisible: boolean;
+  } | null;
+  showToast: (
+    message: string,
+    type: 'success' | 'error' | 'warning' | 'info'
+  ) => void;
+  hideToast: () => void;
+}
+
+// Create the Zustand store with persistence middleware
+export const useUIStore = create<UIState>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      isDarkMode: false,
+      isSidebarOpen: false,
+      isLoading: false,
+      toast: null,
+
+      // Actions
+      toggleDarkMode: () => set({ isDarkMode: !get().isDarkMode }),
+      toggleSidebar: () => set({ isSidebarOpen: !get().isSidebarOpen }),
+      closeSidebar: () => set({ isSidebarOpen: false }),
+      setLoading: loading => set({ isLoading: loading }),
+      showToast: (message, type) =>
+        set({
+          toast: {
+            message,
+            type,
+            isVisible: true,
+          },
+        }),
+      hideToast: () =>
+        set({
+          toast: get().toast ? { ...get().toast, isVisible: false } : null,
+        }),
+    }),
+    {
+      name: 'ui-storage', // Unique name for the storage key
+      partialize: state => ({
+        isDarkMode: state.isDarkMode,
+      }), // Only persist dark mode preference
+    }
+  )
+);
+```
+
+### User Preferences Store
+
+The user preferences store is implemented in `src/stores/user-preferences-store.ts`:
+
+```ts
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+// Define the user preferences state structure
+interface UserPreferencesState {
+  // Dashboard preferences
+  dashboardView: 'grid' | 'list';
+  setDashboardView: (view: 'grid' | 'list') => void;
+
+  // Analytics preferences
+  analyticsPeriod: '7d' | '30d' | '90d' | '1y';
+  setAnalyticsPeriod: (period: '7d' | '30d' | '90d' | '1y') => void;
+
+  // Notification preferences
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  setEmailNotifications: (enabled: boolean) => void;
+  setPushNotifications: (enabled: boolean) => void;
+
+  // Platform preferences
+  preferredPlatforms: string[];
+  togglePlatform: (platform: string) => void;
+
+  // Reset all preferences
+  resetPreferences: () => void;
+}
+
+// Create the Zustand store with persistence middleware
+export const useUserPreferencesStore = create<UserPreferencesState>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      dashboardView: 'grid',
+      analyticsPeriod: '30d',
+      emailNotifications: true,
+      pushNotifications: true,
+      preferredPlatforms: ['twitter', 'facebook', 'instagram', 'linkedin'],
+
+      // Actions
+      setDashboardView: view => set({ dashboardView: view }),
+      setAnalyticsPeriod: period => set({ analyticsPeriod: period }),
+      setEmailNotifications: enabled => set({ emailNotifications: enabled }),
+      setPushNotifications: enabled => set({ pushNotifications: enabled }),
+      togglePlatform: platform => {
+        const currentPlatforms = get().preferredPlatforms;
+        const updatedPlatforms = currentPlatforms.includes(platform)
+          ? currentPlatforms.filter(p => p !== platform)
+          : [...currentPlatforms, platform];
+        set({ preferredPlatforms: updatedPlatforms });
+      },
+      resetPreferences: () =>
+        set({
+          dashboardView: 'grid',
+          analyticsPeriod: '30d',
+          emailNotifications: true,
+          pushNotifications: true,
+          preferredPlatforms: ['twitter', 'facebook', 'instagram', 'linkedin'],
+        }),
+    }),
+    {
+      name: 'user-preferences-storage', // Unique name for the storage key
+    }
+  )
+);
+```
+
+### Custom Hooks for Zustand Stores
+
+Custom hooks for accessing Zustand stores are implemented in `src/hooks/use-ui-store.ts` and `src/hooks/use-user-preferences.ts`:
+
+```ts
+// src/hooks/use-ui-store.ts
+import { useUIStore, type UIState } from '@/stores/ui-store';
+
+// Custom hook to access UI store state and actions
+export const useUI = () => useUIStore();
+
+// Custom selectors for specific parts of the UI state
+export const useDarkMode = () => useUIStore(state => state.isDarkMode);
+export const useSidebar = () => useUIStore(state => state.isSidebarOpen);
+export const useLoading = () => useUIStore(state => state.isLoading);
+export const useToast = () => useUIStore(state => state.toast);
+```
+
+```ts
+// src/hooks/use-user-preferences.ts
+import {
+  useUserPreferencesStore,
+  type UserPreferencesState,
+} from '@/stores/user-preferences-store';
+
+// Custom hook to access user preferences store state and actions
+export const useUserPreferences = () => useUserPreferencesStore();
+
+// Custom selectors for specific parts of the user preferences state
+export const useDashboardView = () =>
+  useUserPreferencesStore(state => state.dashboardView);
+export const useAnalyticsPeriod = () =>
+  useUserPreferencesStore(state => state.analyticsPeriod);
+export const useNotificationPreferences = () =>
+  useUserPreferencesStore(state => ({
+    email: state.emailNotifications,
+    push: state.pushNotifications,
+  }));
+export const usePreferredPlatforms = () =>
+  useUserPreferencesStore(state => state.preferredPlatforms);
+```
+
+## Integration with Providers
+
+The state management libraries are integrated with the application through the Providers component in `src/components/global/providers.tsx`:
+
+```tsx
+'use client';
+
+import React from 'react';
+import { ClerkProvider } from '@clerk/nextjs';
+import { QueryProvider } from '@/lib/query-client';
+
+const Providers = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <QueryProvider>
+      <ClerkProvider>{children}</ClerkProvider>
+    </QueryProvider>
+  );
+};
+
+export default Providers;
+```
+
+## Example Usage
+
+Here's a complete example of how to use both state management systems in a component:
+
+```tsx
+'use client';
+
+import React from 'react';
+import { usePosts, useCreatePost } from '@/hooks/use-posts';
+import { useUI, useUserPreferences } from '@/hooks';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+
+export const StateManagementDemo = () => {
+  // TanStack Query - Server state
+  const { data: postsData, isLoading, isError, error } = usePosts(1, 5);
+  const { mutate: createPost, isPending: isCreating } = useCreatePost();
+
+  // Zustand - UI state
+  const { isDarkMode, toggleDarkMode } = useUI();
+
+  // Zustand - User preferences state
+  const {
+    dashboardView,
+    setDashboardView,
+    analyticsPeriod,
+    setAnalyticsPeriod,
+    emailNotifications,
+    setEmailNotifications,
+  } = useUserPreferences();
+
+  const handleCreateSamplePost = () => {
+    createPost(
+      {
+        content: `Sample post created at ${new Date().toLocaleTimeString()}`,
+        platform: 'twitter',
+      },
+      {
+        onSuccess: () => {
+          toast.success('Post created successfully!');
+        },
+        onError: error => {
+          toast.error(`Failed to create post: ${error.message}`);
+        },
+      }
+    );
+  };
+
+  if (isError) {
+    return (
+      <div className="p-4 text-center text-red-500">
+        Error loading posts: {error?.message || 'Unknown error'}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>TanStack Query (Server State)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Button onClick={handleCreateSamplePost} disabled={isCreating}>
+                {isCreating ? 'Creating...' : 'Create Sample Post'}
+              </Button>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-medium mb-2">Recent Posts</h3>
+              {isLoading ? (
+                <p>Loading posts...</p>
+              ) : (
+                <ul className="space-y-2">
+                  {postsData?.data.map(post => (
+                    <li key={post.id} className="border-b pb-2">
+                      <p className="font-medium">
+                        {post.content.substring(0, 50)}...
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Platform: {post.platform} | Status: {post.status}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Zustand (Local/UI State)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="dark-mode">Dark Mode</Label>
+              <Switch
+                id="dark-mode"
+                checked={isDarkMode}
+                onCheckedChange={toggleDarkMode}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Dashboard View</Label>
+              <div className="flex gap-2">
+                <Button
+                  variant={dashboardView === 'grid' ? 'default' : 'outline'}
+                  onClick={() => setDashboardView('grid')}
+                >
+                  Grid
+                </Button>
+                <Button
+                  variant={dashboardView === 'list' ? 'default' : 'outline'}
+                  onClick={() => setDashboardView('list')}
+                >
+                  List
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Analytics Period</Label>
+              <div className="flex gap-2">
+                {(['7d', '30d', '90d', '1y'] as const).map(period => (
+                  <Button
+                    key={period}
+                    variant={analyticsPeriod === period ? 'default' : 'outline'}
+                    onClick={() => setAnalyticsPeriod(period)}
+                  >
+                    {period}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="email-notifications">Email Notifications</Label>
+              <Switch
+                id="email-notifications"
+                checked={emailNotifications}
+                onCheckedChange={setEmailNotifications}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+```

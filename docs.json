@@ -46,6 +46,14 @@
             ]
           },
           {
+            "group": "State Management",
+            "pages": [
+              "state-management/index",
+              "state-management/implementation",
+              "state-management/best-practices"
+            ]
+          },
+          {
             "group": "Configuration",
             "pages": [
               "configuration/environment-variables",

@@ -1,0 +1,374 @@
+---
+title: 'Best Practices'
+description: 'Best practices for state management in StackForge'
+---
+
+# Best Practices
+
+This page outlines the best practices for implementing and using state management in StackForge.
+
+## Separation of Concerns
+
+The most important principle in StackForge's state management is the clear separation between server state and local state:
+
+### Server State (TanStack Query)
+
+Use TanStack Query for data that:
+
+- Comes from an external source (API, database)
+- Needs to be synchronized with a server
+- Might be shared across multiple components
+- Should be cached to avoid unnecessary requests
+- Requires background updates
+
+Examples:
+
+- User profiles
+- Posts and content
+- Analytics data
+- Settings stored on the server
+
+### Local State (Zustand)
+
+Use Zustand for data that:
+
+- Is specific to the client
+- Doesn't need to be synchronized with a server
+- Is UI-related
+- Should persist between sessions (when needed)
+- Is used for component communication
+
+Examples:
+
+- Dark mode preference
+- Sidebar open/closed state
+- Form input values
+- UI notifications
+
+## Custom Hooks
+
+Always create custom hooks to abstract the underlying state management libraries. This provides several benefits:
+
+### Benefits
+
+1. **Abstraction**: Components don't need to know about the specific state management library
+2. **Reusability**: Logic can be shared across multiple components
+3. **Consistency**: Ensures consistent usage patterns across the application
+4. **Maintainability**: Changes to state management implementation only need to be made in one place
+
+### Example Custom Hook
+
+```ts
+// Instead of using TanStack Query directly in components
+// src/hooks/use-posts.ts
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { postsApi, type Post, type PostCreateInput } from '@/lib/api';
+
+export const usePosts = (page: number = 1, limit: number = 10) => {
+  return useQuery({
+    queryKey: ['posts', page, limit],
+    queryFn: () => postsApi.getPosts(page, limit),
+  });
+};
+
+export const useCreatePost = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: PostCreateInput) => postsApi.createPost(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['posts']);
+    },
+  });
+};
+```
+
+## Type Safety
+
+TypeScript is used extensively to ensure type safety in state management:
+
+### API Response Types
+
+```ts
+// src/lib/api.ts
+export interface Post {
+  id: string;
+  userId: string;
+  content: string;
+  platform: string;
+  status: string;
+  scheduledAt: string | null;
+  publishedAt: string | null;
+  engagement: number;
+  likes: number;
+  shares: number;
+  comments: number;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### Store State Types
+
+```ts
+// src/stores/ui-store.ts
+interface UIState {
+  isDarkMode: boolean;
+  toggleDarkMode: () => void;
+  // ... other properties
+}
+```
+
+### Hook Return Types
+
+```ts
+// The useQuery hook automatically infers types from the queryFn
+const { data, isLoading, isError } = usePosts(1, 10);
+// data is automatically typed as PaginatedResponse<Post> | undefined
+```
+
+## Error Handling
+
+Proper error handling is crucial for a good user experience:
+
+### TanStack Query Error Handling
+
+```tsx
+const { data, isLoading, isError, error } = usePosts(1, 10);
+
+if (isError) {
+  return (
+    <div className="p-4 text-center text-red-500">
+      Error loading posts: {error?.message || 'Unknown error'}
+    </div>
+  );
+}
+```
+
+### Mutation Error Handling
+
+```tsx
+const { mutate: createPost, isPending, isError, error } = useCreatePost();
+
+const handleCreatePost = () => {
+  createPost(
+    { content, platform },
+    {
+      onSuccess: () => {
+        toast.success('Post created successfully!');
+      },
+      onError: error => {
+        toast.error(`Failed to create post: ${error.message}`);
+      },
+    }
+  );
+};
+```
+
+## Loading States
+
+Provide visual feedback during loading states:
+
+### Query Loading States
+
+```tsx
+const { data, isLoading, isFetching } = usePosts(1, 10);
+
+if (isLoading) {
+  return <LoadingSpinner />;
+}
+
+return (
+  <div>
+    {isFetching && <div>Updating...</div>}
+    {/* Render data */}
+  </div>
+);
+```
+
+### Mutation Loading States
+
+```tsx
+const { mutate: createPost, isPending } = useCreatePost();
+
+return (
+  <Button onClick={handleCreatePost} disabled={isPending}>
+    {isPending ? 'Creating...' : 'Create Post'}
+  </Button>
+);
+```
+
+## Persistence
+
+Use Zustand's persist middleware for important UI preferences:
+
+```ts
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+export const useUIStore = create<UIState>()(
+  persist(
+    (set, get) => ({
+      isDarkMode: false,
+      toggleDarkMode: () => set({ isDarkMode: !get().isDarkMode }),
+      // ... other actions
+    }),
+    {
+      name: 'ui-storage', // Unique name for the storage key
+      partialize: state => ({
+        isDarkMode: state.isDarkMode,
+      }), // Only persist dark mode preference
+    }
+  )
+);
+```
+
+## Performance Optimization
+
+### TanStack Query Optimization
+
+1. **Stale Time**: Set appropriate stale times to reduce unnecessary refetches
+2. **Keep Previous Data**: Use `keepPreviousData` for smooth pagination transitions
+3. **Query Keys**: Use descriptive and consistent query keys
+
+```ts
+return useQuery({
+  queryKey: ['posts', page, limit, status, platform],
+  queryFn: () => postsApi.getPosts(page, limit, status, platform),
+  staleTime: 30 * 1000, // 30 seconds
+  keepPreviousData: true,
+});
+```
+
+### Zustand Optimization
+
+1. **Selective Subscriptions**: Use selectors to subscribe to only the needed state
+2. **Memoization**: Use `useMemo` for expensive computations
+
+```ts
+// Good: Only subscribes to isDarkMode
+const isDarkMode = useUIStore(state => state.isDarkMode);
+
+// Good: Memoizes the result
+const expensiveValue = useMemo(() => {
+  return computeExpensiveValue(data);
+}, [data]);
+```
+
+## Testing
+
+Write tests for your state management logic:
+
+### Testing Custom Hooks
+
+```tsx
+// src/__tests__/state-management.test.tsx
+import { renderHook } from '@testing-library/react';
+import { useUIStore } from '@/stores/ui-store';
+
+describe('UI Store', () => {
+  it('should toggle dark mode', () => {
+    const { result } = renderHook(() => useUIStore());
+
+    expect(result.current.isDarkMode).toBe(false);
+
+    act(() => {
+      result.current.toggleDarkMode();
+    });
+
+    expect(result.current.isDarkMode).toBe(true);
+  });
+});
+```
+
+### Testing Components
+
+```tsx
+import { render, screen, act } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { PostsList } from '@/components/dashboard/posts-list';
+
+const createTestQueryClient = () => {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+};
+
+const TestProvider = ({ children }: { children: React.ReactNode }) => {
+  const queryClient = createTestQueryClient();
+  return (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+};
+
+it('should render loading state', async () => {
+  render(<PostsList />, { wrapper: TestProvider });
+
+  expect(screen.getByText('Loading...')).toBeInTheDocument();
+});
+```
+
+## Adding New State
+
+### For Server State (TanStack Query)
+
+1. **Add API Service Functions**: Add new functions to `src/lib/api.ts`
+2. **Create Custom Hooks**: Create new hooks in `src/hooks/`
+3. **Use in Components**: Use the hooks in your components
+
+```ts
+// src/lib/api.ts
+export const usersApi = {
+  getUser: async (id: string): Promise<User> => {
+    return apiCall(`/api/users/${id}`);
+  },
+};
+
+// src/hooks/use-users.ts
+export const useUser = (id: string) => {
+  return useQuery({
+    queryKey: ['user', id],
+    queryFn: () => usersApi.getUser(id),
+    enabled: !!id,
+  });
+};
+```
+
+### For Local State (Zustand)
+
+1. **Create New Store**: Create a new store in `src/stores/`
+2. **Create Custom Hook**: Create a hook in `src/hooks/`
+3. **Use in Components**: Use the hook in your components
+
+```ts
+// src/stores/notification-store.ts
+interface NotificationState {
+  notifications: Notification[];
+  addNotification: (notification: Notification) => void;
+}
+
+export const useNotificationStore = create<NotificationState>()(set => ({
+  notifications: [],
+  addNotification: notification =>
+    set(state => ({
+      notifications: [...state.notifications, notification],
+    })),
+}));
+
+// src/hooks/use-notifications.ts
+export const useNotifications = () => useNotificationStore();
+```
+
+## Common Pitfalls to Avoid
+
+1. **Over-fetching**: Don't fetch the same data in multiple components; use query caching
+2. **Under-fetching**: Don't make too many small requests; batch requests when possible
+3. **Ignoring Errors**: Always handle errors appropriately
+4. **Not Providing Loading States**: Always provide feedback during loading
+5. **Mutating State Directly**: Always use setter functions provided by the state management libraries
+6. **Not Typing**: Always use TypeScript types for better developer experience
+7. **Storing Large Objects**: Avoid storing large objects in state; store IDs and fetch data as needed
