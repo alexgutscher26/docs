@@ -102,14 +102,6 @@
           {
             "label": "Startups",
             "href": "https://www.mintlify.com/startups"
-          },
-          {
-            "label": "Enterprise",
-            "href": "https://www.mintlify.com/enterprise"
-          },
-          {
-            "label": "Switch",
-            "href": "https://www.mintlify.com/switch"
           }
         ]
       },
@@ -119,22 +111,6 @@
           {
             "label": "Customers",
             "href": "https://mintlify.com/customers"
-          },
-          {
-            "label": "Blog",
-            "href": "https://mintlify.com/blog"
-          },
-          {
-            "label": "Pricing",
-            "href": "https://www.mintlify.com/pricing"
-          },
-          {
-            "label": "Guides",
-            "href": "https://www.mintlify.com/guides"
-          },
-          {
-            "label": "Feature Requests",
-            "href": "https://github.com/orgs/mintlify/discussions/categories/feature-requests"
           }
         ]
       },
@@ -144,10 +120,6 @@
           {
             "label": "Careers",
             "href": "https://mintlify.com/careers"
-          },
-          {
-            "label": "Wall of Love",
-            "href": "https://www.mintlify.com/wall-of-love"
           }
         ]
       },
@@ -157,14 +129,6 @@
           {
             "label": "Privacy Policy",
             "href": "https://mintlify.com/legal/privacy"
-          },
-          {
-            "label": "Terms of Service",
-            "href": "https://mintlify.com/legal/terms"
-          },
-          {
-            "label": "Security",
-            "href": "https://security.mintlify.com/?_gl=1*ascm4x*_gcl_au*NTU1ODkzNjQ0LjE3NTQ5Mjg4NzIuMTgzMDQ5NTExMS4xNzU3NTQwMDk1LjE3NTc1NDAwOTQ."
           }
         ]
       }
