@@ -1,7 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "maple",
-  "name": "Mintlify",
+  "name": "StackForge",
   "colors": {
     "primary": "#0D9373",
     "light": "#55D799",
@@ -23,45 +23,22 @@
             "pages": [
               "index",
               "quickstart",
-              "installation",
-              {
-                "group": "Web editor",
-                "icon": "mouse-pointer-2",
-                "pages": [
-                  "editor/getting-started",
-                  "editor/git-concepts",
-                  "editor/branches",
-                  "editor/content-management",
-                  "editor/publishing",
-                  "editor/keyboard-shortcuts",
-                  "editor/troubleshooting"
-                ]
-              }
+              "common-commands",
+              "deployment",
+              "development",
+              "updating-codebase"
             ]
           },
           {
-            "group": "Core configuration",
+            "group": "Configuration",
             "pages": [
-              "settings",
-              "pages",
-              "navigation",
-              "themes",
-              "settings/custom-domain"
+              "environment-variables"
             ]
           },
           {
-            "group": "AI optimization",
+            "group": "Help",
             "pages": [
-              "guides/assistant",
-              "ai/llmstxt",
-              "ai/contextual-menu",
-              "ai/model-context-protocol",
-              "ai/markdown-export",
-              "guides/geo",
-              "guides/claude-code",
-              "guides/cursor",
-              "guides/windsurf",
-              "ai/slack-app"
+              "FAQ"
             ]
           },
           {
