@@ -1,0 +1,218 @@
+---
+title: 'Authentication Setup'
+description: 'Configure authentication for your StackForge production environment'
+---
+
+# Authentication Setup
+
+Properly configuring authentication for your production environment is crucial for the security and functionality of your StackForge application. This guide walks you through setting up Clerk authentication for production.
+
+## Clerk Production Setup
+
+### 1. Create Production Application
+
+1. Log in to your [Clerk Dashboard](https://dashboard.clerk.dev/)
+2. Create a new application for your production environment
+3. Note the production API keys
+
+### 2. Configure Environment Variables
+
+Update your production environment variables with the production Clerk keys:
+
+```env
+# Production Clerk Configuration
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_XXXXXXXXXXXXXXXXXXXXXXXX
+CLERK_SECRET_KEY=sk_live_XXXXXXXXXXXXXXXXXXXXXXXX
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/auth/signin
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/auth/signup
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_URL=/
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_URL=/
+```
+
+### 3. Update Redirect URLs
+
+In your Clerk dashboard, update the redirect URLs to match your production domain:
+
+- **Sign-in URL**: `https://yourdomain.com/auth/signin`
+- **Sign-up URL**: `https://yourdomain.com/auth/signup`
+- **Sign-in Fallback URL**: `https://yourdomain.com/`
+- **Sign-up Fallback URL**: `https://yourdomain.com/`
+
+### 4. Configure Social Login Providers
+
+Enable and configure the social login providers you want to support in production:
+
+1. Go to your Clerk dashboard
+2. Navigate to "User & Authentication" > "Social Connections"
+3. Enable the providers you want to support (Google, GitHub, etc.)
+4. Configure the client IDs and secrets for each provider
+
+### 5. Set Up Production Domains
+
+In your Clerk dashboard, configure your production domains:
+
+1. Go to "Whitelist" > "Domains"
+2. Add your production domain (e.g., `yourdomain.com`)
+3. Configure cookie settings for your domain
+
+## Session Management
+
+### Session Configuration
+
+Configure session management for production:
+
+```env
+# Session Configuration
+CLERK_SESSION_COOKIE_NAME=__session
+CLERK_SESSION_COOKIE_DOMAIN=yourdomain.com
+CLERK_SESSION_COOKIE_SECURE=true
+CLERK_SESSION_COOKIE_HTTP_ONLY=true
+CLERK_SESSION_COOKIE_SAME_SITE=lax
+```
+
+### Session Timeout
+
+Set appropriate session timeout values:
+
+```env
+# Session Timeout (in seconds)
+CLERK_SESSION_EXPIRATION=86400  # 24 hours
+CLERK_SESSION_REFRESH_AT=3600   # 1 hour
+```
+
+## Multi-Factor Authentication
+
+### Enable 2FA
+
+To enable two-factor authentication:
+
+1. Go to your Clerk dashboard
+2. Navigate to "User & Authentication" > "Multi-factor"
+3. Enable "Two-step verification"
+4. Configure backup codes and authenticator apps
+
+### Customize 2FA Settings
+
+Customize 2FA settings for your application:
+
+```ts
+// src/components/auth/signin-form.tsx
+import { SignIn } from '@clerk/nextjs';
+
+export default function SignInPage() {
+  return (
+    <SignIn
+      appearance={{
+        elements: {
+          footerAction: { display: 'none' },
+        },
+      }}
+      signUpUrl="/auth/signup"
+    />
+  );
+}
+```
+
+## Organization Management
+
+If your application uses organizations:
+
+### Enable Organizations
+
+1. Go to your Clerk dashboard
+2. Navigate to "Organizations"
+3. Enable organization management
+4. Configure organization settings
+
+### Customize Organization Settings
+
+```ts
+// src/middleware.ts
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+
+const isOrganizationRoute = createRouteMatcher(['/organization(.*)']);
+
+export default clerkMiddleware((auth, req) => {
+  if (isOrganizationRoute(req)) {
+    auth().protect({ permission: 'org:manage' });
+  }
+});
+```
+
+## Security Best Practices
+
+### Token Security
+
+1. **Never expose secret keys** in client-side code
+2. **Use environment variables** for all sensitive configuration
+3. **Rotate keys regularly** for enhanced security
+4. **Limit permissions** for API keys
+
+### Domain Verification
+
+1. **Verify your domain** in the Clerk dashboard
+2. **Configure DNS records** as required
+3. **Test domain configuration** before going live
+
+### Session Security
+
+1. **Use secure cookies** in production
+2. **Set appropriate cookie attributes**
+3. **Implement session monitoring**
+4. **Configure session timeouts**
+
+## Testing Authentication
+
+### Pre-Deployment Testing
+
+1. **Test sign-in flow** with all enabled providers
+2. **Test sign-up flow** with email verification
+3. **Test password reset** functionality
+4. **Test session management** across devices
+5. **Test 2FA** if enabled
+
+### Post-Deployment Verification
+
+1. **Verify production keys** are being used
+2. **Test social login** with production credentials
+3. **Confirm redirect URLs** work correctly
+4. **Verify session persistence** across requests
+5. **Test authentication middleware** protection
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Redirect Loop**: Check redirect URL configuration
+2. **Social Login Failures**: Verify client IDs and secrets
+3. **Session Issues**: Check cookie configuration
+4. **Domain Errors**: Verify domain verification status
+
+### Debugging Authentication
+
+1. **Check browser console** for errors
+2. **Review Clerk dashboard logs**
+3. **Verify environment variables**
+4. **Test with a clean browser session**
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Environment Variables"
+  icon="settings"
+  href="/going-to-production/environment-variables"
+>
+  Set up production environment variables
+</Card>
+
+<Card
+  title="Production Checklist"
+  icon="check-circle"
+  href="/going-to-production/production-checklist"
+>
+  Complete the production checklist
+</Card>
+
+</CardGroup>

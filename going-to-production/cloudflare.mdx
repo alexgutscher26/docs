@@ -1,0 +1,284 @@
+---
+title: 'Deploy to Cloudflare Pages'
+description: 'Deploy your StackForge application to Cloudflare Pages'
+---
+
+# Deploy to Cloudflare Pages
+
+This guide will help you deploy your StackForge application to Cloudflare Pages using the Edge runtime.
+
+## Overview
+
+Cloudflare Pages is a cost-effective platform for deploying Next.js applications with excellent performance and global distribution.
+
+## Prerequisites
+
+1. Cloudflare account with a paid Workers subscription (required for Next.js applications)
+2. Git repository connected to Cloudflare Pages
+3. Production environment variables prepared
+
+## Deployment Steps
+
+### 1. Connect your Repository to Cloudflare Pages
+
+1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/)
+2. Navigate to "Workers & Pages"
+3. Click "Create application" > "Pages" > "Connect to Git"
+4. Select your Git provider and repository
+5. Configure build settings:
+   - **Build command**: `bun run build`
+   - **Build output directory**: `.next`
+   - **Root directory**: `/` (project root)
+
+### 2. Configure Build Settings
+
+Make sure to set the correct build settings:
+
+```bash
+# Build settings
+Build command: bun run build
+Build output directory: .next
+Root directory: /
+```
+
+### 3. Environment Variables
+
+Set all required environment variables in the Cloudflare dashboard:
+
+1. Go to your project settings in Cloudflare
+2. Navigate to "Settings" > "Environment variables"
+3. Add each environment variable with the appropriate production values:
+
+```env
+# App Configuration
+NEXT_PUBLIC_APP_NAME=YourAppName
+NEXT_PUBLIC_APP_DOMAIN=https://yourdomain.com
+
+# Database
+DATABASE_URL=postgresql://user:password@host:port/database
+
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_XXXXXXXXXXXXXXXXXXXXXXXX
+CLERK_SECRET_KEY=sk_live_XXXXXXXXXXXXXXXXXXXXXXXX
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/auth/signin
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/auth/signup
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_URL=/
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_URL=/
+
+# Optional variables
+RESEND_API_KEY=your_resend_api_key
+```
+
+## Cloudflare-Specific Considerations
+
+### Edge Runtime Limitations
+
+When deploying to Cloudflare's Edge runtime, be aware of these limitations:
+
+1. **Database Latency**: Potentially higher latency to your database
+2. **Node.js Features**: Limited access to Node.js-specific features
+3. **File System Access**: No direct file system access
+4. **Native Modules**: Limited support for native Node.js modules
+
+### Mailer Configuration
+
+Since the default mailer library relies on Node.js, use Resend for email delivery:
+
+```env
+# Mailer Configuration
+MAILER_PROVIDER=resend
+RESEND_API_KEY=your_resend_api_key
+```
+
+### Logger Configuration
+
+Use console logger instead of pino logger:
+
+```env
+# Logger Configuration
+LOGGER=console
+```
+
+## Performance Optimization
+
+### Caching Strategy
+
+Implement caching strategies for better performance:
+
+```ts
+// src/app/api/posts/route.ts
+import { NextResponse } from 'next/server';
+import { unstable_cache } from 'next/cache';
+
+export async function GET() {
+  const getCachedPosts = unstable_cache(
+    async () => {
+      // Fetch posts from database
+      const posts = await fetchPosts();
+      return posts;
+    },
+    ['posts'],
+    { revalidate: 60 } // Cache for 1 minute
+  );
+
+  const posts = await getCachedPosts();
+  return NextResponse.json(posts);
+}
+```
+
+### Image Optimization
+
+Cloudflare Pages provides automatic image optimization:
+
+```tsx
+// src/components/global/optimized-image.tsx
+import Image from 'next/image';
+
+export function OptimizedImage({ src, alt, width, height }: { src: string; alt: string; width: number; height: number }) {
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      quality={75}
+      placeholder="blur"
+    />
+  );
+}
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Build Failures**: Check logs for missing dependencies or environment variables
+2. **Environment Variables Not Set**: Ensure all required variables are configured
+3. **Database Connection Issues**: Verify `DATABASE_URL` format and credentials
+4. **Clerk Authentication Errors**: Check Clerk keys and domain settings
+
+### Debugging Deployment Issues
+
+1. **Check Build Logs**: Review detailed build logs in Cloudflare dashboard
+2. **Verify Environment Variables**: Ensure all variables are correctly set
+3. **Test Locally**: Verify the build works locally with `bun run build`
+4. **Check Dependencies**: Ensure all dependencies install correctly
+
+### Preview Deployments
+
+Test your application before deploying to production:
+
+```bash
+# Preview the application locally
+bun run dev
+
+# Or use Cloudflare's preview feature
+# Push to a feature branch and Cloudflare will create a preview deployment
+```
+
+## Advanced Configuration
+
+### Custom Domains
+
+1. Go to your project settings in Cloudflare
+2. Navigate to "Custom domains"
+3. Add your custom domain
+4. Follow the DNS configuration instructions
+
+### Analytics Integration
+
+Add analytics for monitoring:
+
+```bash
+bun add @cloudflare/next-on-pages
+```
+
+```ts
+// next.config.mjs
+export default {
+  experimental: {
+    runtime: 'edge',
+  },
+};
+```
+
+## Security Considerations
+
+### HTTPS Enforcement
+
+Cloudflare automatically provides HTTPS for your application:
+
+```ts
+// src/middleware.ts
+import { NextResponse } from 'next/server';
+
+export function middleware(request: Request) {
+  const url = new URL(request.url);
+  
+  // Redirect HTTP to HTTPS in production
+  if (
+    process.env['NODE_ENV'] === 'production' &&
+    url.protocol === 'http:'
+  ) {
+    return NextResponse.redirect(
+      `https://${url.hostname}${url.pathname}`,
+      301
+    );
+  }
+  
+  return NextResponse.next();
+}
+```
+
+### Security Headers
+
+Configure security headers for your deployment:
+
+```ts
+// next.config.mjs
+export default {
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+        ],
+      },
+    ];
+  },
+};
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Production Checklist"
+  icon="check-circle"
+  href="/going-to-production/production-checklist"
+>
+  Complete the production checklist
+</Card>
+
+<Card
+  title="Environment Variables"
+  icon="settings"
+  href="/going-to-production/environment-variables"
+>
+  Configure all environment variables
+</Card>
+
+</CardGroup>

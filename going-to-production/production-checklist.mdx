@@ -1,0 +1,133 @@
+---
+title: 'Production Checklist'
+description: 'Comprehensive checklist for deploying StackForge to production'
+---
+
+# Production Checklist
+
+Before deploying your StackForge application to production, ensure you've completed all the items in this checklist to avoid common deployment issues and security vulnerabilities.
+
+## Pre-Deployment Checklist
+
+### Application Configuration
+
+- [ ] **License Validation**: Ensure you have a valid StackForge license for production use
+- [ ] **Environment Variables**: All required environment variables are set and validated
+- [ ] **Application Name**: Update `NEXT_PUBLIC_APP_NAME` to your production application name
+- [ ] **Domain Configuration**: Set `NEXT_PUBLIC_APP_DOMAIN` to your production domain
+- [ ] **Security Headers**: Configure security headers for your production environment
+
+### Authentication Setup
+
+- [ ] **Clerk Production Keys**: Replace development Clerk keys with production keys
+- [ ] **Redirect URLs**: Update sign-in and sign-up redirect URLs for production
+- [ ] **Session Management**: Configure session timeouts and security settings
+- [ ] **Social Login**: Enable and test all required social login providers
+- [ ] **2FA**: Configure two-factor authentication if required
+
+### Database Configuration
+
+- [ ] **Production Database**: Set up PostgreSQL database for production
+- [ ] **Connection Pooling**: Configure connection pooling for better performance
+- [ ] **Backups**: Set up automated database backups
+- [ ] **Indexes**: Ensure proper database indexes are created
+- [ ] **Migrations**: Run all database migrations
+
+### Security Considerations
+
+- [ ] **HTTPS**: Ensure your production environment uses HTTPS
+- [ ] **CORS**: Configure CORS settings for your domain
+- [ ] **Rate Limiting**: Implement rate limiting for API endpoints
+- [ ] **Input Validation**: Verify all input validation is in place
+- [ ] **Secrets Management**: Ensure all secrets are properly managed
+
+### Performance Optimization
+
+- [ ] **Caching**: Configure caching strategies (Redis, CDN, etc.)
+- [ ] **Image Optimization**: Set up image optimization
+- [ ] **Code Splitting**: Verify code splitting is working correctly
+- [ ] **Bundle Analysis**: Analyze and optimize bundle sizes
+- [ ] **Monitoring**: Set up performance monitoring
+
+### Testing
+
+- [ ] **End-to-End Tests**: Run all end-to-end tests
+- [ ] **Integration Tests**: Verify all integrations work in production environment
+- [ ] **Load Testing**: Perform load testing to ensure scalability
+- [ ] **Browser Testing**: Test on all supported browsers and devices
+- [ ] **Accessibility Testing**: Verify accessibility compliance
+
+### Deployment Preparation
+
+- [ ] **Build Process**: Verify production build process works correctly
+- [ ] **Deployment Scripts**: Test all deployment scripts
+- [ ] **Rollback Plan**: Prepare rollback procedures
+- [ ] **Monitoring Setup**: Configure application monitoring and alerting
+- [ ] **Documentation**: Update deployment documentation
+
+## Post-Deployment Verification
+
+### Application Health
+
+- [ ] **Home Page**: Verify home page loads correctly
+- [ ] **Authentication**: Test sign-in and sign-up flows
+- [ ] **Dashboard**: Verify dashboard functionality
+- [ ] **API Endpoints**: Test all API endpoints
+- [ ] **Database Operations**: Verify CRUD operations work correctly
+
+### Performance Metrics
+
+- [ ] **Load Times**: Check page load times
+- [ ] **API Response Times**: Verify API response times are acceptable
+- [ ] **Database Performance**: Check database query performance
+- [ ] **Error Rates**: Monitor application error rates
+- [ ] **Uptime**: Verify application uptime
+
+### Security Verification
+
+- [ ] **HTTPS**: Confirm HTTPS is working correctly
+- [ ] **Security Headers**: Verify security headers are set
+- [ ] **Authentication**: Confirm authentication is secure
+- [ ] **Data Protection**: Verify sensitive data is properly protected
+- [ ] **Vulnerability Scanning**: Run vulnerability scans
+
+## Emergency Procedures
+
+### Rollback Process
+
+1. **Identify Issue**: Determine the cause of the problem
+2. **Notify Team**: Alert relevant team members
+3. **Execute Rollback**: Deploy previous stable version
+4. **Verify Functionality**: Confirm application is working correctly
+5. **Investigate**: Determine root cause of the issue
+6. **Fix and Redeploy**: Implement fix and redeploy
+
+### Incident Response
+
+1. **Monitor**: Continuously monitor application health
+2. **Alert**: Set up alerts for critical issues
+3. **Respond**: Quick response to incidents
+4. **Document**: Document all incidents and resolutions
+5. **Improve**: Implement improvements to prevent recurrence
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Authentication Setup"
+  icon="lock"
+  href="/going-to-production/authentication-setup"
+>
+  Configure authentication for production
+</Card>
+
+<Card
+  title="Environment Variables"
+  icon="settings"
+  href="/going-to-production/environment-variables"
+>
+  Set up production environment variables
+</Card>
+
+</CardGroup>

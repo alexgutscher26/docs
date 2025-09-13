@@ -74,6 +74,28 @@
          ]
       },
       {
+        "dropdown": "Going to Production",
+        "icon": "rocket",
+        "description": "Deploy your StackForge application to production",
+        "groups": [
+          {
+            "group": "Going to Production",
+            "pages": [
+              "going-to-production/index",
+              "going-to-production/production-checklist",
+              "going-to-production/authentication-setup",
+              "going-to-production/environment-variables",
+              "going-to-production/deployment-options",
+              "going-to-production/database-setup",
+              "going-to-production/vercel",
+              "going-to-production/cloudflare",
+              "going-to-production/sherpa",
+              "going-to-production/vps"
+            ]
+          }
+        ]
+      },
+      {
         "dropdown": "API Reference",
         "description": "Reference for the API",
         "icon": "terminal",
