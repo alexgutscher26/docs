@@ -1,0 +1,172 @@
+---
+title: 'Component Playground'
+description: 'Explore and test all available UI components in StackForge'
+---
+
+# Component Playground
+
+The Component Playground is an interactive showcase of all UI components available in StackForge. It allows developers to explore, test, and understand how to use various components in their applications.
+
+## Accessing the Component Playground
+
+The Component Playground is accessible through the dashboard navigation:
+
+1. Navigate to the Dashboard
+2. Click on "Component Playground" in the sidebar navigation
+3. Browse through different component categories
+
+## Component Categories
+
+The playground is organized into the following categories:
+
+### Buttons
+Explore different button variants, sizes, and states:
+- Default, secondary, destructive, outline, ghost, and link variants
+- Small, default, large, and icon sizes
+- Buttons with icons
+
+### Inputs
+Test various form input components:
+- Text inputs and textareas
+- Switches and toggles
+- Select dropdowns
+- Checkboxes and radio groups
+- Date and time pickers
+
+### Data Display
+View components for displaying information:
+- Badges with different variants and sizes
+- Avatars with fallbacks
+- Tables with headers and data
+- Animated numbers
+
+### Feedback
+Components for user feedback and notifications:
+- Alert messages
+- Toast notifications
+- Skeleton loaders
+
+### Navigation
+Components for app navigation:
+- Tabs with content
+- Accordions for expandable content
+
+### Forms
+Form-specific components:
+- Checkboxes and radio groups
+- OTP input fields
+
+### Date & Time
+Date and time selection components:
+- Date pickers
+- Time pickers
+- DateTime pickers
+
+### Toggles
+Switch and toggle components:
+- Switches with labels
+- Toggle button groups
+
+### Overlays
+Modal and overlay components:
+- Dialogs with content and actions
+- Dropdown menus with actions
+
+### Progress
+Progress and loading indicators:
+- Progress bars with different values
+- Loading animations
+
+### Media
+Media-related components:
+- Carousels for image/content sliders
+- Tooltips for contextual help
+- Animated text effects
+- Background patterns
+- Special effects (magic cards, particles)
+- Marquee scrolling content
+
+## Using the Playground
+
+The playground allows you to:
+
+1. **Browse Components**: Navigate through different categories to see all available components
+2. **Interact with Components**: Many components are interactive, allowing you to test their functionality
+3. **View Implementation**: See how components are implemented in code
+4. **Copy Examples**: Use the examples as templates for your own components
+
+## Adding New Components to the Playground
+
+To add new components to the playground:
+
+1. Open [src/app/(main)/dashboard/playground/page.tsx](file:///C:/Users/madaj/OneDrive/Desktop/StackForge/src/app/(main)/dashboard/playground/page.tsx)
+2. Add a new category to the `categories` array if needed
+3. Extend the `renderCategoryContent` function with examples for your new component
+4. Import any required components at the top of the file
+
+Example of adding a new category:
+
+```tsx
+// Add to categories array
+const categories = [
+  // ... existing categories
+  { id: 'new-category', name: 'New Category', icon: NewIcon },
+];
+
+// Add case to renderCategoryContent function
+case 'new-category':
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>New Component</CardTitle>
+          <CardDescription>Description of the new component</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Component examples */}
+          <NewComponent />
+        </CardContent>
+      </Card>
+    </div>
+  );
+```
+
+## Best Practices
+
+When using the Component Playground:
+
+1. **Reference Examples**: Use the playground as a reference for implementing components in your features
+2. **Test Interactions**: Interact with components to understand their behavior
+3. **Check Responsiveness**: Test how components behave on different screen sizes
+4. **Copy Implementation**: Use the implementation patterns as templates for your own components
+
+## Customization
+
+The Component Playground can be customized to match your application's needs:
+
+1. **Add New Categories**: Extend the playground with additional component categories
+2. **Modify Examples**: Update existing examples to match your use cases
+3. **Add Custom Components**: Include your application-specific components
+4. **Update Styling**: Modify the styling to match your brand
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Component Development"
+  icon="code"
+  href="/development/component-development"
+>
+  Learn how to create and customize components
+</Card>
+
+<Card
+  title="UI Components"
+  icon="layout"
+  href="/development/ui-components"
+>
+  Explore the full UI component library
+</Card>
+
+</CardGroup>

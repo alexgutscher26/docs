@@ -1,0 +1,118 @@
+---
+title: 'UI Components'
+description: 'Comprehensive guide to UI components in StackForge'
+---
+
+# UI Components
+
+StackForge includes a rich set of UI components built with shadcn/ui, Aceternity UI, and Magic UI. This guide provides an overview of all available components and how to use them.
+
+## shadcn/ui Components
+
+StackForge includes the following shadcn/ui components:
+
+- **Buttons**: Primary actions and interactions
+- **Cards**: Content containers with headers and footers
+- **Inputs**: Form fields for user data entry
+- **Textareas**: Multi-line text input
+- **Switches**: Toggle switches for boolean values
+- **Badges**: Status indicators and labels
+- **Avatars**: User profile images with fallbacks
+- **Dialogs**: Modal overlays for focused interactions
+- **Dropdown Menus**: Context menus and action lists
+- **Progress Indicators**: Loading and completion status
+- **Tables**: Data display in tabular format
+- **Tabs**: Content organization in tabbed interfaces
+- **Accordions**: Expandable content sections
+- **Tooltips**: Contextual help text
+- **Select**: Dropdown selection components
+
+## Aceternity UI & Magic UI Components
+
+StackForge also includes specialized components from Aceternity UI and Magic UI:
+
+- **Animated Text**: Text with entrance animations
+- **Background Patterns**: Decorative background elements
+- **Border Effects**: Visual enhancements for containers
+- **Magic Cards**: Interactive cards with hover effects
+- **Marquee**: Scrolling content display
+- **Number Tickers**: Animated number counters
+- **Particles**: Interactive background elements
+- **Skeleton Loaders**: Loading state placeholders
+- **Blur Text**: Text with blur entrance effects
+
+## Component Customization
+
+All components can be customized through:
+
+1. **Props**: Pass props to modify component behavior
+2. **Styling**: Use Tailwind classes to adjust appearance
+3. **Composition**: Combine components to create complex UIs
+4. **Extension**: Create new components based on existing ones
+
+## Using Components
+
+To use components in your application:
+
+1. Import the component from the appropriate directory:
+   ```tsx
+   import { Button } from '@/components/ui/button';
+   ```
+
+2. Use the component in your JSX:
+   ```tsx
+   <Button variant="primary">Click me</Button>
+   ```
+
+3. Customize with props and classes:
+   ```tsx
+   <Button 
+     variant="secondary" 
+     className="mt-4"
+     onClick={handleClick}
+   >
+     Custom Button
+   </Button>
+   ```
+
+## Component Playground
+
+For interactive examples and testing, visit the [Component Playground](/development/component-playground) which showcases all components with live examples.
+
+## Best Practices
+
+1. **Consistency**: Use consistent component variants throughout your application
+2. **Accessibility**: Ensure components are accessible with proper ARIA attributes
+3. **Performance**: Use components judiciously to maintain good performance
+4. **Responsive Design**: Test components on different screen sizes
+
+## Adding New Components
+
+To add new components to your application:
+
+1. Create a new component file in the appropriate directory
+2. Follow the existing component patterns and conventions
+3. Export the component for use in other parts of the application
+4. Add examples to the Component Playground if relevant
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Component Playground"
+  icon="toy-brick"
+  href="/development/component-playground"
+>
+  Explore interactive component examples
+</Card>
+
+<Card
+  title="Component Development"
+  icon="code"
+  href="/development/component-development"
+>
+  Learn how to create and customize components
+</Card>
+
+</CardGroup>

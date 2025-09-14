@@ -35,6 +35,8 @@
               "development/approaching-local-development",
               "development/project-structure",
               "development/component-development",
+              "development/component-playground",
+              "development/ui-components",
               "development/api-development",
               "development/database-management",
               "development/testing",
