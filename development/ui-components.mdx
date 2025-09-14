@@ -55,22 +55,20 @@ All components can be customized through:
 To use components in your application:
 
 1. Import the component from the appropriate directory:
+
    ```tsx
    import { Button } from '@/components/ui/button';
    ```
 
 2. Use the component in your JSX:
+
    ```tsx
    <Button variant="primary">Click me</Button>
    ```
 
 3. Customize with props and classes:
    ```tsx
-   <Button 
-     variant="secondary" 
-     className="mt-4"
-     onClick={handleClick}
-   >
+   <Button variant="secondary" className="mt-4" onClick={handleClick}>
      Custom Button
    </Button>
    ```
