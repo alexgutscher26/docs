@@ -42,7 +42,8 @@
               "development/performance-optimization",
               "development/access-control",
               "development/content-management",
-              "development/search-engine-optimization"
+              "development/search-engine-optimization",
+              "development/pages-router-support"
             ]
           },
           {

@@ -1,0 +1,126 @@
+---
+title: 'Pages Router Support'
+description: 'How StackForge implements backward compatibility with Next.js Pages Router'
+---
+
+# Pages Router Support
+
+StackForge implements backward compatibility with Next.js Pages Router alongside the modern App Router. This allows developers to gradually migrate existing Pages Router code or integrate third-party libraries that rely on Pages Router patterns.
+
+## Implementation Details
+
+Next.js allows using both the App Router (`/app`) and Pages Router (`/pages`) in the same project. StackForge leverages this capability to provide maximum flexibility for developers.
+
+### File Structure
+
+The Pages Router files should be placed in a `/pages` directory at the root of the `src` folder:
+
+```
+src/
+├── app/           # App Router files (default)
+├── pages/         # Pages Router files (backward compatibility)
+│   ├── api/       # API routes
+│   ├── _app.tsx   # Custom App component
+│   ├── _document.tsx # Custom Document component
+│   └── index.tsx  # Home page
+└── components/    # Shared components
+```
+
+### Creating Pages Router Files
+
+To create a new page using the Pages Router:
+
+1. Create a `pages` directory in `src/` if it doesn't exist
+2. Add your page files following the Pages Router conventions
+
+Example Pages Router page:
+
+```tsx
+// src/pages/legacy-page.tsx
+import React from 'react';
+
+const LegacyPage = () => {
+  return (
+    <div>
+      <h1>Legacy Page using Pages Router</h1>
+      <p>This page uses the traditional Pages Router approach.</p>
+    </div>
+  );
+};
+
+export default LegacyPage;
+```
+
+### API Routes Compatibility
+
+Both App Router and Pages Router API routes are supported:
+
+- App Router API routes: `src/app/api/`
+- Pages Router API routes: `src/pages/api/`
+
+Example Pages Router API route:
+
+```ts
+// src/pages/api/legacy-endpoint.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  res.status(200).json({ message: 'Hello from Pages Router API route' });
+}
+```
+
+## Configuration
+
+No additional configuration is required to enable Pages Router support. Next.js automatically detects and handles both routing systems.
+
+However, you may want to update your `next.config.mjs` file if you need to customize routing behavior:
+
+```js
+// next.config.mjs
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Your existing configuration
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'randomuser.me',
+      },
+    ],
+  },
+  // Pages Router specific options (if needed)
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
+};
+
+export default nextConfig;
+```
+
+## Migration Strategy
+
+When migrating from Pages Router to App Router:
+
+1. Create new pages in the App Router (`src/app/`)
+2. Gradually move existing Pages Router pages to App Router
+3. Update data fetching patterns (getServerSideProps → Server Components)
+4. Update API routes (API Routes → Route Handlers)
+
+### Coexistence Best Practices
+
+When using both routers simultaneously:
+
+1. Avoid naming conflicts between pages in both routers
+2. Share components and utilities between both routing systems
+3. Use consistent styling and theming approaches
+4. Maintain consistent authentication and authorization patterns
+
+## Limitations
+
+While Pages Router support provides backward compatibility, there are some considerations:
+
+1. **Performance**: App Router generally offers better performance with Server Components
+2. **Features**: Some newer Next.js features are only available in App Router
+3. **Future Development**: Next.js is focusing future development on App Router
+
+## Conclusion
+
+StackForge's Pages Router support ensures that teams can adopt the platform regardless of their existing Next.js architecture. This flexibility allows for gradual migration and integration with legacy systems while still benefiting from StackForge's modern features and tooling.
