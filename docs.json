@@ -63,7 +63,8 @@
             "pages": [
               "configuration/environment-variables",
               "configuration/application-configuration",
-              "configuration/authentication-configuration"
+              "configuration/authentication-configuration",
+              "authjs-configuration"
             ]
           },
           {

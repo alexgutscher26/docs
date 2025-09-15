@@ -1,0 +1,287 @@
+---
+title: 'Auth.js Configuration'
+description: 'Configure authentication for your StackForge application using Auth.js (NextAuth.js v5)'
+---
+
+# Auth.js Configuration
+
+StackForge provides Auth.js (formerly NextAuth.js) as an alternative authentication system to Clerk, offering more flexibility for developers who want to customize their authentication flow. This guide will walk you through configuring Auth.js for your application.
+
+> **Note**: If you're using Auth.js instead of Clerk, you can remove the Clerk environment variables from your `.env.local` file. Similarly, if you're using Clerk, you can remove the Auth.js environment variables that you're not using.
+
+## Auth.js Setup
+
+Before configuring Auth.js, you'll need to understand that it works differently from Clerk. Auth.js provides more flexibility but requires more manual setup.
+
+### 1. Environment Variables
+
+Add the following environment variables to your `.env.local` file:
+
+```env
+# Auth.js Configuration
+AUTH_SECRET=your-secret-key # Generate with: openssl rand -base64 32
+AUTH_URL=http://localhost:3000 # Your application URL
+
+# Google OAuth (optional)
+AUTH_GOOGLE_ID=your-google-client-id
+AUTH_GOOGLE_SECRET=your-google-client-secret
+
+# GitHub OAuth (optional)
+AUTH_GITHUB_ID=your-github-client-id
+AUTH_GITHUB_SECRET=your-github-client-secret
+```
+
+To generate a secret key, run:
+```bash
+# On macOS/Linux
+openssl rand -base64 32
+
+# On Windows, you can use: https://generate-secret.vercel.app/32
+```
+
+### 2. Auth.js Configuration File
+
+Create a new file at the root of your project called `auth.ts`:
+
+```ts
+import NextAuth from 'next-auth';
+import { DrizzleAdapter } from '@auth/drizzle-adapter';
+import Google from 'next-auth/providers/google';
+import GitHub from 'next-auth/providers/github';
+import Credentials from 'next-auth/providers/credentials';
+import { db } from '@/db';
+import { users } from '@/db/schema';
+import { eq } from 'drizzle-orm';
+import bcrypt from 'bcrypt';
+
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: DrizzleAdapter(db),
+  providers: [
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+    }),
+    GitHub({
+      clientId: process.env.AUTH_GITHUB_ID,
+      clientSecret: process.env.AUTH_GITHUB_SECRET,
+    }),
+    Credentials({
+      name: 'Credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' }
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        const user = await db.query.users.findFirst({
+          where: eq(users.email, credentials.email as string),
+        });
+
+        if (!user || !user.password) {
+          return null;
+        }
+
+        const isPasswordValid = await bcrypt.compare(
+          credentials.password as string,
+          user.password
+        );
+
+        if (!isPasswordValid) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.avatar,
+        };
+      }
+    })
+  ],
+  pages: {
+    signIn: '/auth/signin',
+    signOut: '/auth/signout',
+    error: '/auth/error',
+  },
+  callbacks: {
+    session({ session, user }) {
+      if (session.user) {
+        session.user.id = user.id;
+      }
+      return session;
+    },
+  },
+  secret: process.env.AUTH_SECRET,
+});
+```
+
+### 3. Auth.js API Routes
+
+Create the API routes for Auth.js by creating a new file at `src/app/api/auth/[...nextauth]/route.ts`:
+
+```ts
+import { handlers } from '@/auth';
+export const { GET, POST } = handlers;
+```
+
+### 4. Auth.js Middleware
+
+Update your middleware at `src/middleware.ts` to work with Auth.js:
+
+```ts
+import NextAuth from 'next-auth';
+import { authConfig } from './auth.config';
+
+export default NextAuth(authConfig).auth;
+
+export const config = {
+  matcher: ['/((?!api|_next/static|_next/image|.*\\.png$).*)'],
+};
+```
+
+You'll also need to create `auth.config.ts` at the root of your project:
+
+```ts
+import type { NextAuthConfig } from 'next-auth';
+
+export const authConfig = {
+  pages: {
+    signIn: '/auth/signin',
+  },
+  callbacks: {
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
+      
+      if (isOnDashboard) {
+        if (isLoggedIn) return true;
+        return false; // Redirect unauthenticated users to login page
+      } else if (isLoggedIn) {
+        return Response.redirect(new URL('/dashboard', nextUrl));
+      }
+      
+      return true;
+    },
+  },
+  providers: [], // Add providers with an empty array for now
+} satisfies NextAuthConfig;
+```
+
+## Using Auth.js in Your Components
+
+To use Auth.js in your components, you can import the auth function:
+
+### Server Components
+
+```tsx
+import { auth } from '@/auth';
+
+export default async function Page() {
+  const session = await auth();
+  return <p>Welcome {session?.user?.name}!</p>;
+}
+```
+
+### Client Components
+
+```tsx
+'use client';
+
+import { useSession } from 'next-auth/react';
+
+export default function ClientComponent() {
+  const { data: session } = useSession();
+  
+  return <p>Welcome {session?.user?.name}!</p>;
+}
+```
+
+## Social Authentication
+
+StackForge supports social authentication providers through Auth.js. Currently configured providers include:
+
+- Google
+- GitHub
+
+To enable additional social authentication providers:
+
+1. Register your application with the provider
+2. Obtain the client ID and secret
+3. Add the environment variables to your `.env.local` file
+4. Add the provider to the providers array in your `auth.ts` file
+
+## Database Schema
+
+Auth.js requires additional tables in your database. The Drizzle adapter will automatically create these tables for you, but you can also define them manually if needed:
+
+```ts
+// These tables are automatically created by the Drizzle adapter
+// You don't need to define them manually unless you want to customize them
+
+// accounts table - stores OAuth account information
+// sessions table - stores session information
+// users table - stores user information (extends your existing users table)
+// verification_tokens table - stores email verification tokens
+```
+
+## Testing Authentication
+
+To test Auth.js in your development environment:
+
+1. Start your development server: `bun run dev`
+2. Navigate to `/auth/signin`
+3. Use test credentials or social login
+4. Verify that you can access protected routes like `/dashboard`
+
+## Switching from Clerk to Auth.js
+
+If you want to switch from Clerk to Auth.js:
+
+1. Update your middleware to use Auth.js instead of Clerk middleware
+2. Replace Clerk components with Auth.js components
+3. Update your environment variables
+4. Remove Clerk dependencies: `bun remove @clerk/nextjs @clerk/types`
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Environment Variables Not Set**: Ensure all Auth.js environment variables are properly configured
+2. **Redirect Loops**: Check your middleware configuration for conflicting routes
+3. **Social Login Not Working**: Verify OAuth credentials in your provider dashboards
+4. **Session Issues**: Clear browser cookies and try signing in again
+
+### Debugging Authentication
+
+To debug authentication issues:
+
+1. Check the browser console for errors
+2. Verify environment variables are loaded correctly
+3. Check the Auth.js logs for any configuration issues
+4. Review the middleware logs for redirect issues
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Application Configuration"
+  icon="settings"
+  href="/application-configuration"
+>
+  Configure your application environment variables
+</Card>
+
+<Card
+  title="Environment Variables"
+  icon="database"
+  href="/environment-variables"
+>
+  Detailed information about all environment variables
+</Card>
+
+</CardGroup>

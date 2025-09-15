@@ -5,7 +5,9 @@ description: 'Configure authentication for your StackForge application using Cle
 
 # Authentication Configuration
 
-StackForge uses Clerk for authentication, providing a complete user management system with pre-built UI components and secure authentication flows. This guide will walk you through configuring authentication for your application.
+StackForge uses Clerk for authentication by default, providing a complete user management system with pre-built UI components and secure authentication flows. This guide will walk you through configuring authentication for your application. Alternatively, you can use Auth.js (NextAuth.js) as described in the [Auth.js Configuration](/authjs-configuration) guide.
+
+> **Note**: If you choose to use Auth.js instead of Clerk, you can remove the Clerk environment variables from your `.env.local` file. Similarly, if you're using Clerk, you can remove the Auth.js environment variables.
 
 ## Clerk Setup
 
