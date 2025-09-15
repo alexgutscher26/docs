@@ -27,14 +27,14 @@ const MyForm = () => {
     schema: mySchema,
     defaultValues: {
       // ... default values
-    }
+    },
   });
-  
+
   // Add form persistence
   const formPersistence = useFormPersistence(formMethods, 'my-form-id', {
-    enable: true
+    enable: true,
   });
-  
+
   // ... rest of component
 };
 ```
@@ -46,7 +46,7 @@ For security, you should exclude sensitive fields like passwords from persistenc
 ```tsx
 const formPersistence = useFormPersistence(formMethods, 'my-form-id', {
   enable: true,
-  excludeFields: ['password', 'creditCard'] // Don't persist sensitive data
+  excludeFields: ['password', 'creditCard'], // Don't persist sensitive data
 });
 ```
 
@@ -99,6 +99,7 @@ useFormPersistence<T extends FieldValues>(
 ```
 
 **Parameters:**
+
 - `formMethods` - The return value from `formBuilder` or `useForm`
 - `formId` - A unique identifier for this form
 - `options` - Configuration options
@@ -106,6 +107,7 @@ useFormPersistence<T extends FieldValues>(
   - `excludeFields` - Array of field names to exclude from persistence
 
 **Returns:**
+
 - `data` - The persisted form data
 - `clear` - Function to clear persisted data for this form
 - `clearAll` - Function to clear all persisted form data

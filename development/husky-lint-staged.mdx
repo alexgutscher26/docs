@@ -1,0 +1,79 @@
+# Husky and Lint-Staged Configuration
+
+This document explains how Husky and lint-staged are configured in the StackForge project to automate code quality checks.
+
+## Overview
+
+Husky is a tool that enables Git hooks, allowing us to run scripts when certain Git actions occur. Lint-staged is used to run linters and formatters on staged files only, which makes the process faster and more focused.
+
+## Configuration
+
+### Husky
+
+Husky is configured to run on the `pre-commit` hook. The configuration is located in `.husky/pre-commit`:
+
+```bash
+#!/usr/bin/env sh
+npx lint-staged
+```
+
+### Lint-Staged
+
+Lint-staged is configured in `package.json`:
+
+```json
+"lint-staged": {
+  "src/test-husky.ts": "prettier --write"
+}
+```
+
+Currently, it's configured to run Prettier formatting on TypeScript files in the `src` directory.
+
+## How It Works
+
+1. When you run `git commit`, Husky triggers the pre-commit hook
+2. The pre-commit hook runs `npx lint-staged`
+3. Lint-staged finds all staged files that match the patterns in the configuration
+4. For each matching file, it runs the specified commands
+5. If any command fails, the commit is aborted
+6. If all commands succeed, the commit proceeds
+
+## Customizing the Configuration
+
+To modify which files are linted/formatted and what commands are run, update the `lint-staged` configuration in `package.json`.
+
+For example, to lint and format all TypeScript and JavaScript files in the `src` directory:
+
+```json
+"lint-staged": {
+  "src/**/*.{js,jsx,ts,tsx}": [
+    "eslint --fix",
+    "prettier --write"
+  ]
+}
+```
+
+## Troubleshooting
+
+### Hook Failed
+
+If your commit fails due to linting errors:
+
+1. Fix the issues reported by the linter
+2. Stage the changes again with `git add`
+3. Try committing again
+
+### Skipping Hooks
+
+If you need to skip the hooks for a commit (not recommended):
+
+```bash
+git commit --no-verify -m "Your message"
+```
+
+## Best Practices
+
+1. Keep the lint-staged configuration focused on files that are actively being changed
+2. Use fast tools in the pre-commit hook to avoid slowing down development
+3. Run full linting and testing in CI rather than in pre-commit hooks
+4. Update the configuration as needed when adding new file types or tools
