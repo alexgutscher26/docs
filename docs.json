@@ -46,7 +46,8 @@
               "development/content-management",
               "development/search-engine-optimization",
               "development/pages-router-support",
-              "development/form-builder"
+              "development/form-builder",
+              "development/form-persistence"
             ]
           },
           {

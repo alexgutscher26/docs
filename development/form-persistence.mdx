@@ -1,0 +1,116 @@
+# Form State Persistence
+
+This document explains how to implement form state persistence in StackForge applications using the `useFormPersistence` hook.
+
+## Overview
+
+Form state persistence automatically saves form data to localStorage as users fill out forms, and restores that data when they return to the form. This improves user experience by preventing data loss during navigation or page refreshes.
+
+## Implementation
+
+The form state persistence system consists of:
+
+1. **Form State Store** (`src/stores/form-state-store.ts`) - A Zustand store that manages persisted form data
+2. **Form Persistence Hook** (`src/hooks/use-form-state.ts`) - A React hook that integrates with react-hook-form
+3. **Example Implementation** (`src/components/examples/form-persistence-demo.tsx`) - A demonstration component
+
+## Usage
+
+### Basic Implementation
+
+```tsx
+import { formBuilder } from '@/lib/form-builder';
+import { useFormPersistence } from '@/hooks/use-form-state';
+
+const MyForm = () => {
+  const formMethods = formBuilder({
+    schema: mySchema,
+    defaultValues: {
+      // ... default values
+    }
+  });
+  
+  // Add form persistence
+  const formPersistence = useFormPersistence(formMethods, 'my-form-id', {
+    enable: true
+  });
+  
+  // ... rest of component
+};
+```
+
+### Excluding Sensitive Fields
+
+For security, you should exclude sensitive fields like passwords from persistence:
+
+```tsx
+const formPersistence = useFormPersistence(formMethods, 'my-form-id', {
+  enable: true,
+  excludeFields: ['password', 'creditCard'] // Don't persist sensitive data
+});
+```
+
+### Manual Control
+
+You can manually control the persisted data:
+
+```tsx
+// Clear persisted data
+formPersistence.clear();
+
+// Check if data exists
+if (formPersistence.hasData) {
+  // Show notification or take action
+}
+
+// Clear all form data
+formPersistence.clearAll();
+```
+
+## How It Works
+
+1. The `useFormPersistence` hook watches the form for changes using react-hook-form's `watch` method
+2. When form data changes, it's automatically saved to localStorage via the form state store
+3. The data is keyed by the `formId` parameter to prevent conflicts between different forms
+4. On component mount, if persisted data exists, it will be automatically restored
+5. Sensitive fields can be excluded from persistence for security
+
+## Best Practices
+
+1. **Always use a unique form ID** - This prevents data conflicts between different forms
+2. **Exclude sensitive fields** - Never persist passwords, credit cards, or other sensitive data
+3. **Clear data after successful submission** - Prevent stale data from appearing in new form sessions
+4. **Handle large forms carefully** - Very large forms may impact performance
+5. **Test with various data types** - Ensure all form field types are properly persisted and restored
+
+## API Reference
+
+### `useFormPersistence` Hook
+
+```tsx
+useFormPersistence<T extends FieldValues>(
+  formMethods: UseFormReturn<T>,
+  formId: string,
+  options?: {
+    enable?: boolean;
+    excludeFields?: (keyof T)[];
+  }
+)
+```
+
+**Parameters:**
+- `formMethods` - The return value from `formBuilder` or `useForm`
+- `formId` - A unique identifier for this form
+- `options` - Configuration options
+  - `enable` - Whether to enable persistence (default: true)
+  - `excludeFields` - Array of field names to exclude from persistence
+
+**Returns:**
+- `data` - The persisted form data
+- `clear` - Function to clear persisted data for this form
+- `clearAll` - Function to clear all persisted form data
+- `hasData` - Boolean indicating if persisted data exists
+
+## Example Implementation
+
+See `src/components/examples/form-persistence-demo.tsx` for a complete working example.
