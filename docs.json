@@ -45,7 +45,8 @@
               "development/access-control",
               "development/content-management",
               "development/search-engine-optimization",
-              "development/pages-router-support"
+              "development/pages-router-support",
+              "development/form-builder"
             ]
           },
           {
