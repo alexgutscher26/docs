@@ -1,0 +1,534 @@
+---
+title: 'BetterStack Configuration'
+description: 'Configure authentication for your StackForge application using BetterStack (Better Auth)'
+---
+
+# BetterStack Configuration
+
+StackForge provides BetterStack (Better Auth) as an alternative authentication system to Clerk and Auth.js, offering a modern, type-safe authentication solution with built-in support for various authentication methods. This guide will walk you through configuring BetterStack for your application.
+
+> **Note**: If you're using BetterStack instead of Clerk or Auth.js, you can remove the respective environment variables from your `.env.local` file. Similarly, if you're using other authentication providers, you can remove the BetterStack environment variables that you're not using.
+
+## BetterStack Setup
+
+Before configuring BetterStack, you'll need to understand that it provides a comprehensive authentication solution with built-in support for email/password, social providers, passkeys, and more.
+
+### 1. Install BetterStack Dependencies
+
+First, install the BetterStack dependencies:
+
+```bash
+bun add better-auth
+```
+
+### 2. Environment Variables
+
+Add the following environment variables to your `.env.local` file:
+
+```env
+# BetterStack Configuration
+BETTER_AUTH_SECRET=your-secret-key # Generate with: openssl rand -base64 32
+BETTER_AUTH_URL=http://localhost:3000 # Your application URL
+
+# GitHub OAuth (optional)
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+
+# Google OAuth (optional)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+```
+
+To generate a secret key, run:
+```bash
+# On macOS/Linux
+openssl rand -base64 32
+
+# On Windows, you can use: https://generate-secret.vercel.app/32
+```
+
+### 3. BetterStack Configuration File
+
+Create a new file at `src/lib/auth.ts`:
+
+```ts
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { db } from "@/db";
+
+export const auth = betterAuth({
+  database: drizzleAdapter(db, {
+    provider: "pg", // or "mysql", "sqlite"
+  }),
+  emailAndPassword: {
+    enabled: true,
+  },
+  socialProviders: {
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID || "",
+      clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
+    },
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+    },
+  },
+  account: {
+    accountLinking: {
+      enabled: true,
+    },
+  },
+});
+```
+
+### 4. BetterStack API Routes
+
+Create the API routes for BetterStack by creating a new file at `src/app/api/auth/[...all]/route.ts`:
+
+```ts
+import { auth } from "@/lib/auth";
+import { toNextJsHandler } from "better-auth/next-js";
+
+export const { GET, POST } = toNextJsHandler(auth);
+```
+
+### 5. BetterStack Client
+
+Create a client instance at `src/lib/auth-client.ts`:
+
+```ts
+import { createAuthClient } from "better-auth/client";
+import { toast } from "sonner";
+
+export const authClient = createAuthClient({
+  baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+  fetchOptions: {
+    onError(context) {
+      toast.error(context.error?.message || "An error occurred");
+    },
+  },
+});
+```
+
+### 6. BetterStack Middleware
+
+Update your middleware at `src/middleware.ts` to work with BetterStack:
+
+```ts
+import { NextRequest, NextResponse } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
+
+export async function middleware(request: NextRequest) {
+  const sessionCookie = getSessionCookie(request);
+  
+  // Paths that require authentication
+  const protectedPaths = ["/dashboard"];
+  const isProtectedPath = protectedPaths.some(path => 
+    request.nextUrl.pathname.startsWith(path)
+  );
+  
+  // Paths that should redirect authenticated users
+  const authPaths = ["/auth"];
+  const isAuthPath = authPaths.some(path => 
+    request.nextUrl.pathname.startsWith(path)
+  );
+
+  // Redirect authenticated users away from auth pages
+  if (sessionCookie && isAuthPath) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  // Redirect unauthenticated users away from protected pages
+  if (!sessionCookie && isProtectedPath) {
+    return NextResponse.redirect(new URL("/auth/signin", request.url));
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+};
+```
+
+### 7. BetterStack Context Provider
+
+Create a context provider at `src/components/auth/betterstack-provider.tsx`:
+
+```tsx
+'use client';
+
+import { authClient } from "@/lib/auth-client";
+import { Session } from "better-auth/client";
+import React, { createContext, useContext, useEffect, useState } from "react";
+
+type AuthContextType = {
+  session: Session | null;
+  loading: boolean;
+  refreshSession: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthContextType>({
+  session: null,
+  loading: true,
+  refreshSession: async () => {},
+});
+
+export function BetterStackProvider({ children }: { children: React.ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refreshSession = async () => {
+    setLoading(true);
+    try {
+      const newSession = await authClient.getSession();
+      setSession(newSession.data);
+    } catch (error) {
+      setSession(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshSession();
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ session, loading, refreshSession }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export const useBetterStackAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useBetterStackAuth must be used within a BetterStackProvider");
+  }
+  return context;
+};
+```
+
+## Using BetterStack in Your Components
+
+To use BetterStack in your components, you can use the client or the context provider:
+
+### Server Components
+
+```tsx
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+
+export default async function Page() {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  });
+  
+  return <p>Welcome {session?.user?.name}!</p>;
+}
+```
+
+### Client Components
+
+```tsx
+'use client';
+
+import { useBetterStackAuth } from "@/components/auth/betterstack-provider";
+
+export default function ClientComponent() {
+  const { session } = useBetterStackAuth();
+  
+  return <p>Welcome {session?.user?.name}!</p>;
+}
+```
+
+## Social Authentication
+
+StackForge supports social authentication providers through BetterStack. Currently configured providers include:
+
+- GitHub
+- Google
+
+To enable additional social authentication providers:
+
+1. Register your application with the provider
+2. Obtain the client ID and secret
+3. Add the environment variables to your `.env.local` file
+4. Add the provider to the socialProviders object in your `src/lib/auth.ts` file
+
+## Database Schema
+
+BetterStack will automatically create the required database tables. If you want to see the schema or customize it, you can generate it using the BetterStack CLI:
+
+```bash
+npx @better-auth/cli generate
+```
+
+## Authentication Components
+
+Create authentication components for BetterStack:
+
+### Sign In Form
+
+Create `src/components/auth/betterstack-signin-form.tsx`:
+
+```tsx
+'use client';
+
+import { useState } from "react";
+import { authClient } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
+export function BetterStackSignInForm() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const result = await authClient.signIn.email({
+        email,
+        password,
+      });
+      
+      if (result.error) {
+        toast.error(result.error.message);
+        return;
+      }
+      
+      toast.success("Signed in successfully!");
+      router.push("/dashboard");
+      router.refresh();
+    } catch (error) {
+      toast.error("An error occurred during sign in");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSocialSignIn = async (provider: "github" | "google") => {
+    setLoading(true);
+    try {
+      await authClient.signIn.social({ provider });
+    } catch (error) {
+      toast.error("An error occurred during social sign in");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="password">Password</Label>
+        <Input
+          id="password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+      </div>
+      
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading ? "Signing in..." : "Sign In"}
+      </Button>
+      
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-300" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="bg-background px-2 text-gray-500">Or continue with</span>
+        </div>
+      </div>
+      
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => handleSocialSignIn("github")}
+          disabled={loading}
+        >
+          GitHub
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => handleSocialSignIn("google")}
+          disabled={loading}
+        >
+          Google
+        </Button>
+      </div>
+    </form>
+  );
+}
+```
+
+### Sign Up Form
+
+Create `src/components/auth/betterstack-signup-form.tsx`:
+
+```tsx
+'use client';
+
+import { useState } from "react";
+import { authClient } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
+export function BetterStackSignUpForm() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const result = await authClient.signUp.email({
+        email,
+        password,
+        name,
+      });
+      
+      if (result.error) {
+        toast.error(result.error.message);
+        return;
+      }
+      
+      toast.success("Account created successfully! Please check your email to verify your account.");
+      router.push("/auth/signin");
+    } catch (error) {
+      toast.error("An error occurred during sign up");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="name">Name</Label>
+        <Input
+          id="name"
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="password">Password</Label>
+        <Input
+          id="password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+      </div>
+      
+      <Button type="submit" className="w-full" disabled={loading}>
+        {loading ? "Creating account..." : "Sign Up"}
+      </Button>
+    </form>
+  );
+}
+```
+
+## Switching from Clerk or Auth.js to BetterStack
+
+If you want to switch from Clerk or Auth.js to BetterStack:
+
+1. Update your middleware to use BetterStack instead of Clerk/Auth.js middleware
+2. Replace authentication components with BetterStack components
+3. Update your environment variables
+4. Remove unused dependencies:
+   ```bash
+   # If switching from Clerk
+   bun remove @clerk/nextjs @clerk/types
+   
+   # If switching from Auth.js
+   bun remove next-auth @auth/drizzle-adapter
+   ```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Environment Variables Not Set**: Ensure all BetterStack environment variables are properly configured
+2. **Redirect Loops**: Check your middleware configuration for conflicting routes
+3. **Social Login Not Working**: Verify OAuth credentials in your provider dashboards
+4. **Session Issues**: Clear browser cookies and try signing in again
+
+### Debugging Authentication
+
+To debug authentication issues:
+
+1. Check the browser console for errors
+2. Verify environment variables are loaded correctly
+3. Check the BetterStack logs for any configuration issues
+4. Review the middleware logs for redirect issues
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card
+  title="Application Configuration"
+  icon="settings"
+  href="/application-configuration"
+>
+  Configure your application environment variables
+</Card>
+
+<Card
+  title="Environment Variables"
+  icon="database"
+  href="/environment-variables"
+>
+  Detailed information about all environment variables
+</Card>
+
+</CardGroup>

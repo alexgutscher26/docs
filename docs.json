@@ -64,7 +64,8 @@
               "configuration/environment-variables",
               "configuration/application-configuration",
               "configuration/authentication-configuration",
-              "authjs-configuration"
+              "authjs-configuration",
+              "betterstack-configuration"
             ]
           },
           {
