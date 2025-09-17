@@ -43,6 +43,9 @@ StackForge includes custom error pages for common HTTP error codes and scenarios
 - `src/app/maintenance.tsx` - Handles maintenance scenarios
 - `src/app/offline.tsx` - Handles offline scenarios
 - `src/app/rate-limit.tsx` - Handles 429 errors (rate limit exceeded)
+- `src/app/bad-gateway.tsx` - Handles 502 errors (bad gateway)
+- `src/app/service-unavailable.tsx` - Handles 503 errors (service unavailable)
+- `src/app/gateway-timeout.tsx` - Handles 504 errors (gateway timeout)
 
 ### Error Component Structure
 
@@ -162,6 +165,8 @@ To customize the error handling system:
 3. Adjust error reporting in `src/hooks/use-error-reporting.ts`
 4. Modify the API route in `src/app/api/error-report/route.ts`
 5. Customize the custom error pages in `src/app/*.tsx`
+
+Additional error pages can be created by following the same pattern as existing error pages, using the Card component from Shadcn UI and including appropriate recovery options.
 
 ## Integration with Monitoring Services
 
