@@ -30,6 +30,7 @@ bun db:backup
 ```
 
 This command will:
+
 - Connect to your database using the `DATABASE_URL` environment variable
 - Create a timestamped backup file in the `backups` directory
 - Save the backup with a name like `backup-2023-01-01T12-00-00.sql`
@@ -47,6 +48,7 @@ bun db:restore path/to/backup.sql
 ```
 
 This command will:
+
 - Connect to your database using the `DATABASE_URL` environment variable
 - Restore the database from the specified backup file
 - Display warnings about data overwrite
@@ -60,6 +62,7 @@ bun db:backup
 ```
 
 Output:
+
 ```
 💾 Starting database backup process...
 📁 Created backups directory: /path/to/project/backups
@@ -84,6 +87,7 @@ bun db:restore backups/backup-2023-01-01T12-00-00.sql
 ```
 
 Output:
+
 ```
 🔄 Starting database restore process...
 📂 Using most recent backup: /path/to/project/backups/backup-2023-01-01T12-00-00.sql
@@ -105,6 +109,7 @@ Are you sure you want to continue? (y/N)
 ### Remote Database Services
 
 If you're using a remote database service such as:
+
 - NeonDB
 - Supabase
 - Heroku Postgres
@@ -138,6 +143,7 @@ You can automate backups by adding a cron job or scheduled task:
 ### 'pg_dump' or 'psql' not found
 
 If you see an error like:
+
 ```
 'pg_dump' is not recognized as an internal or external command
 ```
@@ -159,6 +165,7 @@ If you see authentication errors:
 3. Check that the password is correct
 
 Example DATABASE_URL format:
+
 ```
 DATABASE_URL=postgresql://username:password@localhost:5432/database_name
 ```
@@ -178,6 +185,7 @@ If you see errors about the database not existing:
 ### Backup Script (`scripts/backup.ts`)
 
 The backup script:
+
 1. Reads database connection details from `DATABASE_URL`
 2. Creates a `backups` directory if it doesn't exist
 3. Generates a timestamp for the backup filename
@@ -188,6 +196,7 @@ The backup script:
 ### Restore Script (`scripts/restore.ts`)
 
 The restore script:
+
 1. Reads database connection details from `DATABASE_URL`
 2. Finds the most recent backup or uses a specified file
 3. Displays a warning about data overwrite
@@ -205,6 +214,7 @@ bun db:test
 ```
 
 This will output:
+
 ```
 ✅ Backup and restore modules imported successfully
 💡 Use the following commands to run the scripts:
@@ -226,11 +236,19 @@ This will output:
 
 <CardGroup cols={2}>
 
-<Card title="Database Management" icon="database" href="/development/database-management">
+<Card
+  title="Database Management"
+  icon="database"
+  href="/development/database-management"
+>
   Learn more about working with the StackForge database
 </Card>
 
-<Card title="Environment Variables" icon="settings" href="/configuration/environment-variables">
+<Card
+  title="Environment Variables"
+  icon="settings"
+  href="/configuration/environment-variables"
+>
   Configure your database connection and other settings
 </Card>
 
