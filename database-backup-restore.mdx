@@ -1,0 +1,237 @@
+---
+title: 'Database Backup and Restore'
+description: 'Learn how to backup and restore your StackForge database using the provided scripts'
+---
+
+# Database Backup and Restore
+
+This document explains how to use the database backup and restore scripts that have been added to the StackForge boilerplate.
+
+## Overview
+
+The StackForge boilerplate now includes scripts for backing up and restoring your PostgreSQL database. These scripts are designed to work with local PostgreSQL installations and provide a simple way to create backups of your database or restore from previous backups.
+
+## Prerequisites
+
+Before using these scripts, ensure you have:
+
+1. PostgreSQL installed on your system
+2. `pg_dump` and `psql` utilities available in your system PATH
+3. Proper database credentials configured in your `.env` or `.env.local` file
+
+## Available Scripts
+
+### Backup Script
+
+The backup script creates a SQL dump of your database using `pg_dump`:
+
+```bash
+bun db:backup
+```
+
+This command will:
+- Connect to your database using the `DATABASE_URL` environment variable
+- Create a timestamped backup file in the `backups` directory
+- Save the backup with a name like `backup-2023-01-01T12-00-00.sql`
+
+### Restore Script
+
+The restore script can restore your database from a backup file:
+
+```bash
+# Restore from the most recent backup
+bun db:restore
+
+# Restore from a specific backup file
+bun db:restore path/to/backup.sql
+```
+
+This command will:
+- Connect to your database using the `DATABASE_URL` environment variable
+- Restore the database from the specified backup file
+- Display warnings about data overwrite
+
+## Usage Examples
+
+### Creating a Backup
+
+```bash
+bun db:backup
+```
+
+Output:
+```
+💾 Starting database backup process...
+📁 Created backups directory: /path/to/project/backups
+🚀 Executing backup command...
+   Host: localhost
+   Port: 5432
+   Database: stackforge
+   Username: postgres
+   Backup file: /path/to/project/backups/backup-2023-01-01T12-00-00.sql
+✅ Database backup completed successfully!
+📂 Backup saved to: /path/to/project/backups/backup-2023-01-01T12-00-00.sql
+```
+
+### Restoring from Backup
+
+```bash
+# Restore from most recent backup
+bun db:restore
+
+# Restore from specific backup
+bun db:restore backups/backup-2023-01-01T12-00-00.sql
+```
+
+Output:
+```
+🔄 Starting database restore process...
+📂 Using most recent backup: /path/to/project/backups/backup-2023-01-01T12-00-00.sql
+🚀 Executing restore command...
+   Host: localhost
+   Port: 5432
+   Database: stackforge
+   Username: postgres
+   Backup file: /path/to/project/backups/backup-2023-01-01T12-00-00.sql
+
+⚠️  WARNING: This will overwrite all existing data in the database!
+Are you sure you want to continue? (y/N)
+⏳ Proceeding with restore in 5 seconds... (Press Ctrl+C to cancel)
+✅ Database restore completed successfully!
+```
+
+## Important Considerations
+
+### Remote Database Services
+
+If you're using a remote database service such as:
+- NeonDB
+- Supabase
+- Heroku Postgres
+- AWS RDS
+- Google Cloud SQL
+
+These scripts may not work as they require local PostgreSQL tools. Most remote database services provide their own backup and restore mechanisms:
+
+- **NeonDB**: Use the Neon Console for backups
+- **Supabase**: Use the Supabase Dashboard for backups
+- **Heroku**: Use `heroku pg:backups` commands
+
+### Security Considerations
+
+- Backup files contain sensitive data and should be stored securely
+- Do not commit backup files to version control
+- The `backups` directory is included in `.gitignore` by default
+- Ensure proper file permissions on backup files
+
+### Automation
+
+You can automate backups by adding a cron job or scheduled task:
+
+```bash
+# Daily backup at 2 AM
+0 2 * * * cd /path/to/project && bun db:backup
+```
+
+## Troubleshooting
+
+### 'pg_dump' or 'psql' not found
+
+If you see an error like:
+```
+'pg_dump' is not recognized as an internal or external command
+```
+
+This means PostgreSQL is not installed or not in your PATH. To fix this:
+
+1. Install PostgreSQL from [postgresql.org](https://www.postgresql.org/download/)
+2. Add the PostgreSQL `bin` directory to your system PATH
+   - On Windows: `C:\Program Files\PostgreSQL\[version]\bin`
+   - On macOS: `/usr/local/pgsql/bin` or `/opt/homebrew/bin`
+   - On Linux: Usually already in PATH after installation
+
+### Authentication Failed
+
+If you see authentication errors:
+
+1. Verify your `DATABASE_URL` in `.env` or `.env.local`
+2. Ensure the database user exists and has proper permissions
+3. Check that the password is correct
+
+Example DATABASE_URL format:
+```
+DATABASE_URL=postgresql://username:password@localhost:5432/database_name
+```
+
+### Database Does Not Exist
+
+If you see errors about the database not existing:
+
+1. Create the database first:
+   ```bash
+   createdb database_name
+   ```
+2. Or update your `DATABASE_URL` to point to an existing database
+
+## Script Details
+
+### Backup Script (`scripts/backup.ts`)
+
+The backup script:
+1. Reads database connection details from `DATABASE_URL`
+2. Creates a `backups` directory if it doesn't exist
+3. Generates a timestamp for the backup filename
+4. Executes `pg_dump` with appropriate parameters
+5. Sets the `PGPASSWORD` environment variable for authentication
+6. Handles various error conditions with specific guidance
+
+### Restore Script (`scripts/restore.ts`)
+
+The restore script:
+1. Reads database connection details from `DATABASE_URL`
+2. Finds the most recent backup or uses a specified file
+3. Displays a warning about data overwrite
+4. Waits 5 seconds before proceeding to allow cancellation
+5. Executes `psql` with appropriate parameters
+6. Sets the `PGPASSWORD` environment variable for authentication
+7. Handles various error conditions with specific guidance
+
+## Testing the Scripts
+
+To verify that the scripts can be imported without errors:
+
+```bash
+bun db:test
+```
+
+This will output:
+```
+✅ Backup and restore modules imported successfully
+💡 Use the following commands to run the scripts:
+   bun db:backup  - Create a database backup
+   bun db:restore - Restore from the most recent backup
+   bun db:restore path/to/backup.sql - Restore from a specific backup file
+```
+
+## Best Practices
+
+1. **Regular Backups**: Schedule regular backups of your database
+2. **Test Restores**: Periodically test restoring from backups to ensure they work
+3. **Secure Storage**: Store backups in a secure location
+4. **Version Control**: Never commit backup files to version control
+5. **Monitor Size**: Keep an eye on backup file sizes and clean up old backups as needed
+6. **Multiple Copies**: Keep multiple copies of important backups in different locations
+
+## Next Steps
+
+<CardGroup cols={2}>
+
+<Card title="Database Management" icon="database" href="/development/database-management">
+  Learn more about working with the StackForge database
+</Card>
+
+<Card title="Environment Variables" icon="settings" href="/configuration/environment-variables">
+  Configure your database connection and other settings
+</Card>
+
+</CardGroup>

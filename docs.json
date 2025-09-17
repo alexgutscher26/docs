@@ -39,6 +39,7 @@
               "development/ui-components",
               "development/api-development",
               "development/database-management",
+              "database-backup-restore",
               "development/testing",
               "development/debugging",
               "development/performance-optimization",
