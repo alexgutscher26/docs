@@ -15,6 +15,7 @@ The error handling system in StackForge consists of:
 2. **Route-Specific Error Boundaries** - Handle errors within specific route segments
 3. **Component-Level Error Boundaries** - Handle errors in individual components
 4. **Error Reporting Utilities** - Log and report errors to monitoring services
+5. **Custom Error Pages** - Handle specific HTTP error codes and scenarios
 
 ## Implementation Details
 
@@ -30,6 +31,18 @@ Next.js App Router automatically wraps route segments in error boundaries. Stack
 - `src/app/(main)/dashboard/error.tsx` - Handles errors in the dashboard section
 - `src/app/(marketing)/error.tsx` - Handles errors in marketing pages
 - `src/app/auth/error.tsx` - Handles errors in authentication flows
+
+### Custom Error Pages
+
+StackForge includes custom error pages for common HTTP error codes and scenarios:
+
+- `src/app/not-found.tsx` - Handles 404 errors (page not found)
+- `src/app/error.tsx` - Handles 500 errors (internal server errors)
+- `src/app/forbidden.tsx` - Handles 403 errors (access forbidden)
+- `src/app/unauthorized.tsx` - Handles 401 errors (unauthorized access)
+- `src/app/maintenance.tsx` - Handles maintenance scenarios
+- `src/app/offline.tsx` - Handles offline scenarios
+- `src/app/rate-limit.tsx` - Handles 429 errors (rate limit exceeded)
 
 ### Error Component Structure
 
@@ -148,6 +161,7 @@ To customize the error handling system:
 2. Update the global error boundary in `src/components/global/error-boundary.tsx`
 3. Adjust error reporting in `src/hooks/use-error-reporting.ts`
 4. Modify the API route in `src/app/api/error-report/route.ts`
+5. Customize the custom error pages in `src/app/*.tsx`
 
 ## Integration with Monitoring Services
 
