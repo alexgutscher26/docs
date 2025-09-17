@@ -1,0 +1,159 @@
+---
+title: 'Error Handling'
+description: 'Comprehensive guide to error handling in StackForge'
+---
+
+# Error Handling in StackForge
+
+StackForge implements a comprehensive error handling system using React Error Boundaries and Next.js built-in error handling mechanisms. This system provides graceful error recovery and a consistent user experience when unexpected errors occur.
+
+## Error Boundary System Overview
+
+The error handling system in StackForge consists of:
+
+1. **Global Error Boundary** - Catches errors at the application level
+2. **Route-Specific Error Boundaries** - Handle errors within specific route segments
+3. **Component-Level Error Boundaries** - Handle errors in individual components
+4. **Error Reporting Utilities** - Log and report errors to monitoring services
+
+## Implementation Details
+
+### Global Error Boundary
+
+The global error boundary is implemented in `src/components/global/error-boundary.tsx` and wraps the entire application in the providers component. It catches any unhandled errors that bubble up to the root of the application.
+
+### Route-Specific Error Handling
+
+Next.js App Router automatically wraps route segments in error boundaries. StackForge provides custom error components for each major route segment:
+
+- `src/app/global-error.tsx` - Handles errors in the root layout
+- `src/app/(main)/dashboard/error.tsx` - Handles errors in the dashboard section
+- `src/app/(marketing)/error.tsx` - Handles errors in marketing pages
+- `src/app/auth/error.tsx` - Handles errors in authentication flows
+
+### Error Component Structure
+
+Each error component follows a consistent pattern:
+
+```tsx
+'use client';
+
+import { useEffect } from 'react';
+
+export default function ErrorComponent({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    // Log the error to an error reporting service
+    console.error(error);
+  }, [error]);
+
+  return (
+    // Error UI with recovery options
+  );
+}
+```
+
+## Error Recovery Options
+
+All error components provide users with multiple recovery options:
+
+1. **Try Again** - Attempts to re-render the component tree
+2. **Refresh Page** - Reloads the entire page
+3. **Navigate Home** - Redirects to the homepage
+
+In development mode, error components also display detailed error information including stack traces to aid debugging.
+
+## Error Reporting
+
+StackForge includes utilities for reporting errors to external services. The `useErrorReporting` hook in `src/hooks/use-error-reporting.ts` provides a consistent interface for error reporting.
+
+The system includes an API route at `/api/error-report` for receiving error reports from the client.
+
+## Best Practices
+
+### Component-Level Error Handling
+
+For components that might throw errors during rendering, wrap them in error boundaries:
+
+```tsx
+import ErrorBoundary from '@/components/global/error-boundary';
+
+function MyComponent() {
+  return (
+    <ErrorBoundary>
+      <PotentiallyFailingComponent />
+    </ErrorBoundary>
+  );
+}
+```
+
+### Event Handler Error Handling
+
+Errors in event handlers are not caught by error boundaries. Handle these explicitly:
+
+```tsx
+function MyComponent() {
+  const handleClick = () => {
+    try {
+      // Potentially failing operation
+    } catch (error) {
+      // Handle error appropriately
+      console.error(error);
+    }
+  };
+
+  return <button onClick={handleClick}>Click me</button>;
+}
+```
+
+### Async Error Handling
+
+For async operations, use try/catch blocks:
+
+```tsx
+async function fetchData() {
+  try {
+    const response = await fetch('/api/data');
+    if (!response.ok) {
+      throw new Error('Failed to fetch data');
+    }
+    return response.json();
+  } catch (error) {
+    // Handle error appropriately
+    console.error(error);
+    throw error; // Re-throw if needed
+  }
+}
+```
+
+## Testing Error Handling
+
+To test error handling:
+
+1. Throw errors in components to verify error boundaries work
+2. Check that error components render correctly
+3. Verify that recovery options function as expected
+4. Confirm error reporting is working in development
+
+## Customization
+
+To customize the error handling system:
+
+1. Modify the error components in `src/components/*/error-component.tsx`
+2. Update the global error boundary in `src/components/global/error-boundary.tsx`
+3. Adjust error reporting in `src/hooks/use-error-reporting.ts`
+4. Modify the API route in `src/app/api/error-report/route.ts`
+
+## Integration with Monitoring Services
+
+To integrate with error monitoring services like Sentry:
+
+1. Install the service's SDK
+2. Initialize it in your application
+3. Modify `useErrorReporting` to send errors to the service
+4. Update the API route to forward errors to the service
