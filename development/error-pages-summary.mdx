@@ -1,0 +1,108 @@
+---
+title: 'Error Pages Summary'
+description: 'Comprehensive list of all error pages in StackForge'
+---
+
+# Error Pages Summary
+
+This document provides a comprehensive overview of all error pages implemented in StackForge, including their purpose, HTTP status codes, and file locations.
+
+## HTTP Status Code Error Pages
+
+### 401 Unauthorized
+- **File**: `src/app/unauthorized.tsx`
+- **Purpose**: Handles requests from users who are not authenticated but trying to access protected resources
+- **Status Code**: 401
+
+### 403 Forbidden
+- **File**: `src/app/forbidden.tsx`
+- **Purpose**: Handles requests from authenticated users trying to access resources they don't have permission for
+- **Status Code**: 403
+
+### 404 Not Found
+- **File**: `src/app/not-found.tsx`
+- **Purpose**: Handles requests for non-existent pages
+- **Status Code**: 404
+
+### 429 Rate Limit Exceeded
+- **File**: `src/app/rate-limit.tsx`
+- **Purpose**: Handles requests that exceed rate limiting thresholds
+- **Status Code**: 429
+
+### 500 Internal Server Error
+- **File**: `src/app/error.tsx`
+- **Purpose**: Handles unexpected server errors
+- **Status Code**: 500
+
+### 502 Bad Gateway
+- **File**: `src/app/bad-gateway.tsx`
+- **Purpose**: Handles errors when acting as a gateway or proxy and receiving an invalid response
+- **Status Code**: 502
+
+### 503 Service Unavailable
+- **File**: `src/app/service-unavailable.tsx`
+- **Purpose**: Handles temporary server unavailability due to maintenance or overload
+- **Status Code**: 503
+
+### 504 Gateway Timeout
+- **File**: `src/app/gateway-timeout.tsx`
+- **Purpose**: Handles timeouts when acting as a gateway or proxy
+- **Status Code**: 504
+
+## Special Scenario Error Pages
+
+### Maintenance
+- **File**: `src/app/maintenance.tsx`
+- **Purpose**: Displays during scheduled maintenance periods
+
+### Offline
+- **File**: `src/app/offline.tsx`
+- **Purpose**: Handles scenarios when users lose internet connectivity
+
+## Route-Specific Error Pages
+
+### Global Error
+- **File**: `src/app/global-error.tsx`
+- **Purpose**: Catches errors that occur outside the React component tree
+
+### Dashboard Route Error
+- **File**: `src/app/(main)/dashboard/error.tsx`
+- **Purpose**: Handles errors specific to the dashboard section
+
+### Marketing Route Error
+- **File**: `src/app/(marketing)/error.tsx`
+- **Purpose**: Handles errors specific to marketing pages
+
+### Authentication Route Error
+- **File**: `src/app/auth/error.tsx`
+- **Purpose**: Handles errors specific to authentication flows
+
+## Implementation Details
+
+All error pages follow a consistent design pattern using:
+- Shadcn UI Card components for consistent styling
+- Lucide React icons for visual representation
+- Responsive layouts that work on all device sizes
+- Clear error messages and recovery options
+- Development mode error details for debugging
+
+## Recovery Options
+
+Most error pages provide users with multiple recovery options:
+1. **Navigate Home** - Redirects to the homepage
+2. **Try Again** - Attempts to retry the operation
+3. **Refresh Page** - Reloads the current page
+4. **Contact Support** - For critical errors, provides support contact
+
+## Customization
+
+To add new error pages:
+1. Create a new file in `src/app/` with the naming pattern `[error-name].tsx`
+2. Follow the existing design patterns
+3. Include appropriate error messages and recovery options
+4. Add the new error page to the documentation
+
+To modify existing error pages:
+1. Edit the corresponding file in `src/app/`
+2. Maintain consistency with other error pages
+3. Update documentation if functionality changes
