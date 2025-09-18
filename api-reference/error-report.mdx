@@ -1,0 +1,69 @@
+---
+title: 'Error Report API'
+description: 'API endpoint for reporting errors'
+---
+
+# Error Report API
+
+The Error Report API allows clients to report errors to the server for monitoring and debugging purposes.
+
+## Base URL
+
+All API endpoints are relative to your application's base URL. In development, this is typically `http://localhost:3000`.
+
+## Authentication
+
+This endpoint does not require authentication.
+
+## Rate Limiting
+
+The API implements rate limiting to prevent abuse. Exceeding the rate limit will result in a 429 status code.
+
+## Endpoints
+
+### Report an error
+
+Submit an error report to the server.
+
+- **URL**: `/api/error-report`
+- **Method**: `POST`
+- **Description**: Submit an error report to the server
+- **Request Body**: Any JSON object containing error information
+- **Response**: Success confirmation
+
+#### Example Request
+
+```bash
+curl -X POST "http://localhost:3000/api/error-report" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "An unexpected error occurred",
+    "stack": "Error: Something went wrong\n at someFunction (file.js:10:15)",
+    "url": "http://localhost:3000/dashboard",
+    "timestamp": "2023-05-20T14:30:00Z"
+  }'
+```
+
+#### Example Response
+
+```json
+{
+  "success": true
+}
+```
+
+## Error Handling
+
+The API uses standard HTTP status codes to indicate the success or failure of requests:
+
+- `200`: Success
+- `400`: Bad request (invalid JSON)
+- `500`: Internal server error
+
+Error responses include a JSON object with an error message:
+
+```json
+{
+  "error": "Description of the error"
+}
+```

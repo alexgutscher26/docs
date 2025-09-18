@@ -1,0 +1,56 @@
+---
+title: 'Authentication API'
+description: 'API endpoints for authentication'
+---
+
+# Authentication API
+
+The Authentication API provides endpoints for user authentication using different authentication providers. StackForge supports multiple authentication providers including Clerk (default), Auth.js (NextAuth.js v5), and BetterStack (Better Auth).
+
+## Base URL
+
+All API endpoints are relative to your application's base URL. In development, this is typically `http://localhost:3000`.
+
+## Authentication Providers
+
+### Clerk (Default)
+
+Clerk is the default authentication provider for StackForge. It provides a complete user management solution with pre-built UI components and robust security features.
+
+The Clerk API routes are handled automatically by the Clerk SDK and do not require direct API calls in most cases.
+
+### Auth.js (NextAuth.js v5)
+
+Auth.js (formerly NextAuth.js) is an alternative authentication provider that can be used with StackForge.
+
+#### Endpoints
+
+- **URL**: `/api/auth/nextauth/[...nextauth]`
+- **Methods**: `GET`, `POST`
+- **Description**: Handles all Auth.js authentication flows
+
+### BetterStack (Better Auth)
+
+BetterStack is another alternative authentication provider that can be used with StackForge.
+
+#### Endpoints
+
+- **URL**: `/api/auth/betterauth/[...all]`
+- **Methods**: `GET`, `POST`
+- **Description**: Handles all BetterStack authentication flows
+
+## Authentication Flow
+
+The authentication flow varies depending on the provider being used:
+
+1. **Clerk**: Uses Clerk's pre-built components and hooks
+2. **Auth.js**: Uses Auth.js's pre-built components and hooks
+3. **BetterStack**: Uses BetterStack's pre-built components and hooks
+
+## Session Management
+
+All authentication providers handle session management automatically. Session information is available through the respective provider's client SDKs.
+
+## Error Handling
+
+Authentication errors are handled by the respective authentication providers and typically result in redirects to appropriate error pages or login screens.

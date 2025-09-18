@@ -1,0 +1,217 @@
+---
+title: 'Client SDK'
+description: 'Using the API from the frontend'
+---
+
+# Client SDK
+
+StackForge provides a client-side SDK for interacting with the API from your frontend code. The SDK is located in `src/lib/api.ts` and provides typed functions for all API operations.
+
+## Installation
+
+The client SDK is included with StackForge and requires no additional installation.
+
+## Usage
+
+Import the SDK functions in your components or hooks:
+
+```typescript
+import { postsApi } from '@/lib/api';
+```
+
+## Posts API Functions
+
+### getPosts
+
+Retrieve posts with optional filtering and pagination.
+
+```typescript
+const posts = await postsApi.getPosts(page, limit, status, platform, search);
+```
+
+**Parameters:**
+
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Number of posts to retrieve per page (default: 10, max: 100)
+- `status` (optional): Filter posts by status (published, scheduled, draft, failed)
+- `platform` (optional): Filter posts by platform (twitter, instagram, linkedin, facebook)
+- `search` (optional): Search posts by content
+
+**Returns:** `Promise<PaginatedResponse<Post>>`
+
+### getPost
+
+Retrieve a specific post by ID.
+
+```typescript
+const post = await postsApi.getPost(id);
+```
+
+**Parameters:**
+
+- `id`: The ID of the post to retrieve
+
+**Returns:** `Promise<Post>`
+
+### createPost
+
+Create a new post.
+
+```typescript
+const newPost = await postsApi.createPost(data);
+```
+
+**Parameters:**
+
+- `data`: Object containing post content, platform, and optional scheduledAt
+
+**Returns:** `Promise<Post>`
+
+### updatePost
+
+Update an existing post.
+
+```typescript
+const updatedPost = await postsApi.updatePost(id, data);
+```
+
+**Parameters:**
+
+- `id`: The ID of the post to update
+- `data`: Object containing fields to update
+
+**Returns:** `Promise<Post>`
+
+### deletePost
+
+Delete a post.
+
+```typescript
+await postsApi.deletePost(id);
+```
+
+**Parameters:**
+
+- `id`: The ID of the post to delete
+
+**Returns:** `Promise<void>`
+
+## Types
+
+The SDK provides TypeScript types for all data models:
+
+### Post
+
+```typescript
+interface Post {
+  id: string;
+  userId: string;
+  content: string;
+  platform: string;
+  status: string;
+  scheduledAt: string | null;
+  publishedAt: string | null;
+  engagement: number;
+  likes: number;
+  shares: number;
+  comments: number;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### PostCreateInput
+
+```typescript
+interface PostCreateInput {
+  content: string;
+  platform: string;
+  scheduledAt?: string;
+}
+```
+
+### PostUpdateInput
+
+```typescript
+interface PostUpdateInput {
+  content?: string;
+  platform?: string;
+  status?: string;
+  scheduledAt?: string | null;
+}
+```
+
+### PaginatedResponse
+
+```typescript
+interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+```
+
+## Error Handling
+
+All SDK functions will throw an error if the API request fails. You should wrap calls in try/catch blocks:
+
+```typescript
+try {
+  const posts = await postsApi.getPosts();
+  // Handle successful response
+} catch (error) {
+  // Handle error
+  console.error('Failed to fetch posts:', error);
+}
+```
+
+## Example Usage
+
+Here's a complete example of using the posts API in a React component:
+
+```typescript
+import { useState, useEffect } from 'react';
+import { postsApi, type Post } from '@/lib/api';
+
+export default function PostsList() {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        setLoading(true);
+        const response = await postsApi.getPosts(1, 10);
+        setPosts(response.data);
+      } catch (err) {
+        setError('Failed to fetch posts');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, []);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  return (
+    <div>
+      {posts.map(post => (
+        <div key={post.id}>
+          <h3>{post.content}</h3>
+          <p>Platform: {post.platform}</p>
+          <p>Status: {post.status}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+```

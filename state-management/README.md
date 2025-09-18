@@ -18,7 +18,7 @@ The documentation is organized into three main sections:
 
 ## Structure
 
-```
+```bash
 state-management/
 ├── index.mdx              # Overview
 ├── implementation.mdx     # Implementation details

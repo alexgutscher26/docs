@@ -136,7 +136,13 @@
         "groups": [
           {
             "group": "API Reference",
-            "pages": ["api-reference/introduction"]
+            "pages": [
+              "api-reference/introduction",
+              "api-reference/posts",
+              "api-reference/authentication",
+              "api-reference/error-report",
+              "api-reference/client-sdk"
+            ]
           }
         ]
       },

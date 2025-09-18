@@ -21,71 +21,11 @@ The API implements rate limiting to prevent abuse. Exceeding the rate limit will
 
 ## API Endpoints
 
-### Posts API
+The StackForge API is organized into several resource-based endpoints:
 
-#### Get all posts
-
-- **URL**: `/api/posts`
-- **Method**: `GET`
-- **Description**: Retrieve posts with optional filtering and pagination
-- **Query Parameters**:
-  - `page` (optional): Page number (default: 1)
-  - `limit` (optional): Number of posts to retrieve per page (default: 10, max: 100)
-  - `status` (optional): Filter posts by status (published, scheduled, draft, failed)
-  - `platform` (optional): Filter posts by platform (twitter, instagram, linkedin, facebook)
-  - `search` (optional): Search posts by content
-- **Response**: Object with posts array and pagination metadata
-
-#### Get a specific post
-
-- **URL**: `/api/posts/[id]`
-- **Method**: `GET`
-- **Description**: Retrieve a specific post by ID
-- **Path Parameters**:
-  - `id`: The ID of the post to retrieve
-- **Response**: Post object
-
-#### Create a new post
-
-- **URL**: `/api/posts`
-- **Method**: `POST`
-- **Description**: Create a new post
-- **Request Body**:
-  ```json
-  {
-    "content": "string",
-    "platform": "string",
-    "scheduledAt": "datetime (optional)"
-  }
-  ```
-- **Response**: Created post object
-
-#### Update a post
-
-- **URL**: `/api/posts/[id]`
-- **Method**: `PUT`
-- **Description**: Update an existing post
-- **Path Parameters**:
-  - `id`: The ID of the post to update
-- **Request Body**:
-  ```json
-  {
-    "content": "string",
-    "platform": "string",
-    "status": "string",
-    "scheduledAt": "datetime (optional)"
-  }
-  ```
-- **Response**: Updated post object
-
-#### Delete a post
-
-- **URL**: `/api/posts/[id]`
-- **Method**: `DELETE`
-- **Description**: Delete a post
-- **Path Parameters**:
-  - `id`: The ID of the post to delete
-- **Response**: Success message
+- [Posts API](/api-reference/posts) - Manage social media posts
+- [Authentication API](/api-reference/authentication) - Handle user authentication
+- [Error Report API](/api-reference/error-report) - Report application errors
 
 ## Data Models
 
